@@ -249,13 +249,93 @@ As shown above, execution of the `rate` command comprises the following steps:
 . The `Model` component gets the filtered persons list and replaces `Person` p1 with `Person` p2 which is identical to p2 except rating scores. A `CommandResult` will be generated and returned to `LogicManager`.
 
 ==== Design Considerations
-In the current implementation, adding ratings for a `Person` is done through a new command, `rate`. Alternatively, we can modify the `add` command by making it support more prefixes and accept rating scores as well. We can also update the `edit` command, allowing it to modifying rating scores of a person. However, this approach might result in very long `add` commands that are not user-friendly.
+
+===== Aspect: Implementation of adding and editing rating scores
+
+* **Alternative 1 (current choice):** Implement a new command class `RateCommand` that supports both adding and editing rating scores
+** Pros: Results in a more customisable command that can be easily modified to support more prefixes and additional rating criteria
+** Cons: Complicates the system as users need to familiarise themselves with more commands
+* **Alternative 2:** Extend the original `EditCommand` to allow it to add and modify rating scores of a student
+** Pros: Minimises the number of commands users have to remember to execute tasks, making the application more user-friendly
+** Cons: Requires substantial changes to `EditCommandParser` and hence harder to implement
 
 === Sort Command
 ==== Current Implementation
 The `sort` command supports the listing of students in HR+ based on GPA, name or overall rating in ascending or descending order as specified by the user. The format of this `sort` command is `sort FIELD o/SORT ORDER`.
 
-As sorting is not undoable, this command inherits from the `Command` class instead of the `UndoableCommand` class.
+As sorting is not undoable, this command inherits from the `Command` class instead of the `UndoableCommand` class. The sorting mechanism is mainly facilitated by `LogicManager` and `ModelManager`. `SortCommandParser` residing in `LogicManager` processes user inputs and creates a corresponding `SortCommand`. `ModelManager` will then invoke appropriate sorting methods in `UniquePersonList`.
+
+The following sequence diagram depicts the interactions between `LogicManager` and `ModelManager` when a user issues a request for sorting:
+
+image::
+Figure 3.2.1.1 Sequence diagram for execution of `sort` command
+
+As seen from the sequence diagram above, `LogicManager` and `ModelManager` interact in the following way:
+. When a user keys in `sort gpa o/desc`, `LogicManager` calls method `parser` in `AddressBookParser`.
+. `SortCommandParser` is instantiated. If the user input is of the correct format, a `SortCommand` will be successfully created and returned back to `LogicManager`. Suppose the inputs are not valid or the format of the command is invalid, an exception will be thrown and users will see an error message.
+. `LogicManager` proceeds to invoke `execute` method of `SortCommand`.
+.
+
+Currently, HR+ only allows users to sort the list of students by selected fields in ascending or descending order. This is achieved by encapsulating acceptable sorting orders and fields into `SortOrder` and `SortField` respectively as shown below:
+[source,java]
+----
+/**
+ * Enumeration of acceptable sort orders
+ */
+public enum SortOrder {
+    ASC, DESC
+}
+
+/**
+ * Enumeration of acceptable sort fields
+ */
+public enum SortField {
+    GPA, NAME, RATING
+}
+----
+
+In order to make Person objects comparable, additional methods need to be implemented in the `Person` class to compare different `Person` objects based on GPA, name and rating scores. The following code snippet demonstrates how these methods are implemented:
+[source,java]
+----
+/**
+ * Compares the overall ratings of two {@code Person} objects.
+ * @param p1
+ * @param p2
+ * @return 1 if p1 has a higher overall rating, 0 if p1 and p2 have equal overall rating and -1 otherwise.
+ */
+public static int compareByOverallRating(Person p1, Person p2) {
+    return Double.compare(p1.getRating().getOverallScore(),
+            p2.getRating().getOverallScore());
+}
+----
+
+[source,java]
+----
+/**
+ * Sorts the list based on GPA in ascending order
+ */
+public void sortPersonsGradePointAverageAsc() {
+    Collections.sort(internalList, Person::compareByGradePointAverage);
+}
+
+/**
+ * Sorts the list based on GPA in descending order
+ */
+public void sortPersonsGradePointAverageDesc() {
+    Collections.sort(internalList, Person::compareByGradePointAverage);
+    Collections.reverse(internalList);
+}
+----
+
+==== Design Considerations
+
+==== Aspect: Implementation of `SortCommand`
+* **Alternative 1 (current choice):** Implement a more generic `SortCommand` that sorts the list of students based on parameters supplied by the user
+** Pros: It is easier to modify `SortCommand` to support more fields to be sorted by.
+** Cons: It restricts the format of sort command to be the same and is thus less flexible.
+* **Alternative 2:** Use separate commands for each possible field, such as `gpa-sort`, `rating-sort` and `name-sort` commands
+** Pros: It allows developers to specify different command formats. For example, users might not need to specify the sorting order explicitly. `rating-sort` and `gpa-sort` can have default sorting order to be descending while results from `name-sort` can be in ascending order.
+** Cons: It increases the number of commands in HR+ and might be less user-friendly as users need to familiarise themselves with more commands.
 
 // tag::undoredo[]
 === Undo/Redo Command
