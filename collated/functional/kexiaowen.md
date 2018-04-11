@@ -1,116 +1,4 @@
 # kexiaowen
-###### /java/seedu/address/model/ModelManager.java
-``` java
-    @Override
-    public void sortPersonListAscOrder(SortCommand.SortField sortField) {
-        addressBook.sortAsc(sortField);
-        Predicate<? super Person> currPredicate = filteredPersons.getPredicate();
-        filteredPersons.setPredicate(currPredicate);
-    }
-
-    @Override
-    public void sortPersonListDescOrder(SortCommand.SortField sortField) {
-        addressBook.sortDesc(sortField);
-        Predicate<? super Person> currPredicate = filteredPersons.getPredicate();
-        filteredPersons.setPredicate(currPredicate);
-    }
-
-```
-###### /java/seedu/address/model/AddressBook.java
-``` java
-    /**
-     * Sorts all students in HR+ based on {@code sortField} in ascending order
-     */
-    public void sortAsc(SortCommand.SortField sortField) {
-        switch (sortField) {
-        case GPA:
-            persons.sortPersonsGradePointAverageAsc();
-            break;
-
-        case NAME:
-            persons.sortPersonsNameAsc();
-            break;
-
-        case RATING:
-            persons.sortPersonsRatingAsc();
-            break;
-
-        default:
-            throw new IllegalArgumentException(MESSAGE_INVALID_SORT_FIELD);
-        }
-    }
-
-    /**
-     * Sorts all students in HR+ based on {@code sortField} in descending order
-     */
-    public void sortDesc(SortCommand.SortField sortField) {
-        switch (sortField) {
-        case GPA:
-            persons.sortPersonsGradePointAverageDesc();
-            break;
-
-        case NAME:
-            persons.sortPersonsNameDesc();
-            break;
-
-        case RATING:
-            persons.sortPersonsRatingDesc();
-            break;
-
-        default:
-            throw new IllegalArgumentException(MESSAGE_INVALID_SORT_FIELD);
-        }
-    }
-
-```
-###### /java/seedu/address/model/person/UniquePersonList.java
-``` java
-    /**
-     * Sorts the list based on overall rating in ascending order
-     */
-    public void sortPersonsRatingAsc() {
-        Collections.sort(internalList, Person::compareByOverallRating);
-    }
-
-    /**
-     * Sorts the list based on overall rating in descending order
-     */
-    public void sortPersonsRatingDesc() {
-        Collections.sort(internalList, Person::compareByOverallRating);
-        Collections.reverse(internalList);
-    }
-
-    /**
-     * Sorts the list based on GPA in ascending order
-     */
-    public void sortPersonsGradePointAverageAsc() {
-        Collections.sort(internalList, Person::compareByGradePointAverage);
-    }
-
-    /**
-     * Sorts the list based on GPA in descending order
-     */
-    public void sortPersonsGradePointAverageDesc() {
-        Collections.sort(internalList, Person::compareByGradePointAverage);
-        Collections.reverse(internalList);
-    }
-
-    /**
-     * Sorts the list based on name in ascending order
-     */
-    public void sortPersonsNameAsc() {
-        Collections.sort(internalList, Person::compareByName);
-    }
-
-    /**
-     * Sorts the list based on name in descending order
-     */
-    public void sortPersonsNameDesc() {
-        Collections.sort(internalList, Person::compareByName);
-        Collections.reverse(internalList);
-    }
-
-```
 ###### /java/seedu/address/logic/commands/RateCommand.java
 ``` java
 /**
@@ -219,6 +107,105 @@ public class RateCommand extends UndoableCommand {
                 && rating.equals(e.rating);
     }
 
+}
+```
+###### /java/seedu/address/logic/commands/RatingDeleteCommand.java
+``` java
+/**
+ * Deletes the rating of a person identified using it's last displayed index from HR+.
+ */
+public class RatingDeleteCommand extends UndoableCommand {
+
+    public static final String COMMAND_WORD = "rating-delete";
+
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Deletes the rating of the person identified by the index number used in the last person listing.\n"
+            + "Parameters: INDEX (must be a positive integer)\n"
+            + "Example: " + COMMAND_WORD + " 1";
+
+    public static final String MESSAGE_DELETE_RATING_SUCCESS = "Deleted rating of person named %1$s";
+    public static final String MESSAGE_PERSON_NOT_RATED = "You have not rated %1$s.";
+
+    private final Index targetIndex;
+
+    private Person targetPerson;
+    private Person editedPerson;
+
+    public RatingDeleteCommand(Index targetIndex) {
+        this.targetIndex = targetIndex;
+    }
+
+    @Override
+    public CommandResult executeUndoableCommand() {
+        requireNonNull(targetPerson);
+        requireNonNull(editedPerson);
+
+        try {
+            model.updatePerson(targetPerson, editedPerson);
+        } catch (DuplicatePersonException dpe) {
+            throw new AssertionError("Deleting a person's rating should not result in a duplicate");
+        } catch (PersonNotFoundException pnfe) {
+            throw new AssertionError("The target person cannot be missing");
+        }
+        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+
+        return new CommandResult(String.format(MESSAGE_DELETE_RATING_SUCCESS, targetPerson.getName()));
+    }
+
+    @Override
+    protected void preprocessUndoableCommand() throws CommandException {
+        List<Person> lastShownList = model.getFilteredPersonList();
+
+        if (targetIndex.getZeroBased() >= lastShownList.size()) {
+            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        }
+
+        targetPerson = lastShownList.get(targetIndex.getZeroBased());
+
+        if (targetPerson.getRating().getOverallScore() == Rating.DEFAULT_SCORE) {
+            throw new CommandException(String.format(MESSAGE_PERSON_NOT_RATED, targetPerson.getName()));
+        }
+
+        editedPerson = createEditedPerson(targetPerson);
+    }
+
+    /**
+     * Creates and returns a {@code Person} with the details of {@code targetPerson}
+     * with rating deleted.
+     */
+    private static Person createEditedPerson(Person targetPerson) {
+        assert targetPerson != null;
+
+        Name name = targetPerson.getName();
+        Phone phone = targetPerson.getPhone();
+        Email email = targetPerson.getEmail();
+        Address address = targetPerson.getAddress();
+        University university = targetPerson.getUniversity();
+        ExpectedGraduationYear expectedGraduationYear = targetPerson.getExpectedGraduationYear();
+        Major major = targetPerson.getMajor();
+        GradePointAverage gradePointAverage = targetPerson.getGradePointAverage();
+        JobApplied jobApplied = targetPerson.getJobApplied();
+        Rating defaultRating = new Rating(Rating.DEFAULT_SCORE, Rating.DEFAULT_SCORE,
+                Rating.DEFAULT_SCORE, Rating.DEFAULT_SCORE);
+        Resume resume = targetPerson.getResume();
+        ProfileImage profileImage = targetPerson.getProfileImage();
+        Comment comment = targetPerson.getComment();
+        InterviewDate interviewDate = targetPerson.getInterviewDate();
+        Status status = targetPerson.getStatus();
+        Set<Tag> tags = targetPerson.getTags();
+
+        return new Person(name, phone, email, address, university,
+                expectedGraduationYear, major, gradePointAverage, jobApplied,
+                defaultRating, resume, profileImage, comment, interviewDate, status, tags);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other == this // short circuit if same object
+                || (other instanceof RatingDeleteCommand // instanceof handles nulls
+                && this.targetIndex.equals(((RatingDeleteCommand) other).targetIndex) // state check
+                && Objects.equals(this.targetPerson, ((RatingDeleteCommand) other).targetPerson));
+    }
 }
 ```
 ###### /java/seedu/address/logic/commands/SortCommand.java
@@ -358,182 +345,6 @@ public class SortCommand extends Command {
                 && this.sortField.equals(((SortCommand) other).sortField); // state check
     }
 
-}
-```
-###### /java/seedu/address/logic/commands/RatingDeleteCommand.java
-``` java
-/**
- * Deletes the rating of a person identified using it's last displayed index from HR+.
- */
-public class RatingDeleteCommand extends UndoableCommand {
-
-    public static final String COMMAND_WORD = "rating-delete";
-
-    public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Deletes the rating of the person identified by the index number used in the last person listing.\n"
-            + "Parameters: INDEX (must be a positive integer)\n"
-            + "Example: " + COMMAND_WORD + " 1";
-
-    public static final String MESSAGE_DELETE_RATING_SUCCESS = "Deleted rating of person named %1$s";
-    public static final String MESSAGE_PERSON_NOT_RATED = "You have not rated %1$s.";
-
-    private final Index targetIndex;
-
-    private Person targetPerson;
-    private Person editedPerson;
-
-    public RatingDeleteCommand(Index targetIndex) {
-        this.targetIndex = targetIndex;
-    }
-
-    @Override
-    public CommandResult executeUndoableCommand() {
-        requireNonNull(targetPerson);
-        requireNonNull(editedPerson);
-
-        try {
-            model.updatePerson(targetPerson, editedPerson);
-        } catch (DuplicatePersonException dpe) {
-            throw new AssertionError("Deleting a person's rating should not result in a duplicate");
-        } catch (PersonNotFoundException pnfe) {
-            throw new AssertionError("The target person cannot be missing");
-        }
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-
-        return new CommandResult(String.format(MESSAGE_DELETE_RATING_SUCCESS, targetPerson.getName()));
-    }
-
-    @Override
-    protected void preprocessUndoableCommand() throws CommandException {
-        List<Person> lastShownList = model.getFilteredPersonList();
-
-        if (targetIndex.getZeroBased() >= lastShownList.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-
-        targetPerson = lastShownList.get(targetIndex.getZeroBased());
-
-        if (targetPerson.getRating().getOverallScore() == Rating.DEFAULT_SCORE) {
-            throw new CommandException(String.format(MESSAGE_PERSON_NOT_RATED, targetPerson.getName()));
-        }
-
-        editedPerson = createEditedPerson(targetPerson);
-    }
-
-    /**
-     * Creates and returns a {@code Person} with the details of {@code targetPerson}
-     * with rating deleted.
-     */
-    private static Person createEditedPerson(Person targetPerson) {
-        assert targetPerson != null;
-
-        Name name = targetPerson.getName();
-        Phone phone = targetPerson.getPhone();
-        Email email = targetPerson.getEmail();
-        Address address = targetPerson.getAddress();
-        University university = targetPerson.getUniversity();
-        ExpectedGraduationYear expectedGraduationYear = targetPerson.getExpectedGraduationYear();
-        Major major = targetPerson.getMajor();
-        GradePointAverage gradePointAverage = targetPerson.getGradePointAverage();
-        JobApplied jobApplied = targetPerson.getJobApplied();
-        Rating defaultRating = new Rating(Rating.DEFAULT_SCORE, Rating.DEFAULT_SCORE,
-                Rating.DEFAULT_SCORE, Rating.DEFAULT_SCORE);
-        Resume resume = targetPerson.getResume();
-        ProfileImage profileImage = targetPerson.getProfileImage();
-        Comment comment = targetPerson.getComment();
-        InterviewDate interviewDate = targetPerson.getInterviewDate();
-        Status status = targetPerson.getStatus();
-        Set<Tag> tags = targetPerson.getTags();
-
-        return new Person(name, phone, email, address, university,
-                expectedGraduationYear, major, gradePointAverage, jobApplied,
-                defaultRating, resume, profileImage, comment, interviewDate, status, tags);
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other == this // short circuit if same object
-                || (other instanceof RatingDeleteCommand // instanceof handles nulls
-                && this.targetIndex.equals(((RatingDeleteCommand) other).targetIndex) // state check
-                && Objects.equals(this.targetPerson, ((RatingDeleteCommand) other).targetPerson));
-    }
-}
-```
-###### /java/seedu/address/logic/parser/RatingDeleteCommandParser.java
-``` java
-/**
- * Parses input arguments and creates a new RatingDeleteCommand object
- */
-public class RatingDeleteCommandParser implements Parser<RatingDeleteCommand> {
-
-    /**
-     * Parses the given {@code String} of arguments in the context of the RatingDeleteCommand
-     * and returns a RatingDeleteCommand object for execution.
-     * @throws ParseException if the user input does not conform the expected format
-     */
-    public RatingDeleteCommand parse(String args) throws ParseException {
-        Index index;
-        try {
-            index = ParserUtil.parseIndex(args);
-        } catch (IllegalValueException ive) {
-            throw new ParseException(
-                    String.format(MESSAGE_INVALID_COMMAND_FORMAT, RatingDeleteCommand.MESSAGE_USAGE));
-        }
-        return new RatingDeleteCommand(index);
-    }
-}
-```
-###### /java/seedu/address/logic/parser/SortCommandParser.java
-``` java
-/**
- * Parses input arguments and creates a new SortCommand object
- */
-public class SortCommandParser {
-
-    /**
-     * Parses the given {@code String} of arguments in the context of the SortCommand
-     * and returns an SortCommand object for execution.
-     * @throws ParseException if the user input does not conform the expected format
-     */
-    public SortCommand parse(String args) throws ParseException {
-        requireNonNull(args);
-
-        ArgumentMultimap argMultimap =
-                ArgumentTokenizer.tokenize(args, PREFIX_SORT_ORDER);
-
-        if (!arePrefixesPresent(argMultimap, PREFIX_SORT_ORDER)
-                || !areAllFieldsSupplied(argMultimap, PREFIX_SORT_ORDER)) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, SortCommand.MESSAGE_USAGE));
-        }
-
-        SortCommand.SortField sortField;
-        try {
-            sortField = ParserUtil.parseSortField(argMultimap.getPreamble());
-        } catch (IllegalValueException ive) {
-            throw new ParseException(ive.getMessage(), ive);
-        }
-
-        SortCommand.SortOrder sortOrder;
-        try {
-            sortOrder = ParserUtil.parseSortOrder(
-                    argMultimap.getValue(PREFIX_SORT_ORDER)).get();
-        } catch (IllegalValueException ive) {
-            throw new ParseException(ive.getMessage(), ive);
-        }
-        return new SortCommand(sortOrder, sortField);
-    }
-
-    /**
-     * Returns true if none of the prefixes contains empty {@code Optional} values in the given
-     * {@code ArgumentMultimap}.
-     */
-    private static boolean arePrefixesPresent(ArgumentMultimap argumentMultimap, Prefix... prefixes) {
-        return Stream.of(prefixes).allMatch(prefix -> argumentMultimap.getValue(prefix).isPresent());
-    }
-
-    private static boolean areAllFieldsSupplied(ArgumentMultimap argumentMultimap, Prefix... prefixes) {
-        return Stream.of(prefixes).allMatch(prefix -> !Optional.of(argumentMultimap.getValue(prefix)).equals(""));
-    }
 }
 ```
 ###### /java/seedu/address/logic/parser/ParserUtil.java
@@ -835,4 +646,193 @@ public class RateCommandParser implements Parser<RateCommand> {
         return Stream.of(prefixes).allMatch(prefix -> !Optional.of(argumentMultimap.getValue(prefix)).equals(""));
     }
 }
+```
+###### /java/seedu/address/logic/parser/RatingDeleteCommandParser.java
+``` java
+/**
+ * Parses input arguments and creates a new RatingDeleteCommand object
+ */
+public class RatingDeleteCommandParser implements Parser<RatingDeleteCommand> {
+
+    /**
+     * Parses the given {@code String} of arguments in the context of the RatingDeleteCommand
+     * and returns a RatingDeleteCommand object for execution.
+     * @throws ParseException if the user input does not conform the expected format
+     */
+    public RatingDeleteCommand parse(String args) throws ParseException {
+        Index index;
+        try {
+            index = ParserUtil.parseIndex(args);
+        } catch (IllegalValueException ive) {
+            throw new ParseException(
+                    String.format(MESSAGE_INVALID_COMMAND_FORMAT, RatingDeleteCommand.MESSAGE_USAGE));
+        }
+        return new RatingDeleteCommand(index);
+    }
+}
+```
+###### /java/seedu/address/logic/parser/SortCommandParser.java
+``` java
+/**
+ * Parses input arguments and creates a new SortCommand object
+ */
+public class SortCommandParser {
+
+    /**
+     * Parses the given {@code String} of arguments in the context of the SortCommand
+     * and returns an SortCommand object for execution.
+     * @throws ParseException if the user input does not conform the expected format
+     */
+    public SortCommand parse(String args) throws ParseException {
+        requireNonNull(args);
+
+        ArgumentMultimap argMultimap =
+                ArgumentTokenizer.tokenize(args, PREFIX_SORT_ORDER);
+
+        if (!arePrefixesPresent(argMultimap, PREFIX_SORT_ORDER)
+                || !areAllFieldsSupplied(argMultimap, PREFIX_SORT_ORDER)) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, SortCommand.MESSAGE_USAGE));
+        }
+
+        SortCommand.SortField sortField;
+        try {
+            sortField = ParserUtil.parseSortField(argMultimap.getPreamble());
+        } catch (IllegalValueException ive) {
+            throw new ParseException(ive.getMessage(), ive);
+        }
+
+        SortCommand.SortOrder sortOrder;
+        try {
+            sortOrder = ParserUtil.parseSortOrder(
+                    argMultimap.getValue(PREFIX_SORT_ORDER)).get();
+        } catch (IllegalValueException ive) {
+            throw new ParseException(ive.getMessage(), ive);
+        }
+        return new SortCommand(sortOrder, sortField);
+    }
+
+    /**
+     * Returns true if none of the prefixes contains empty {@code Optional} values in the given
+     * {@code ArgumentMultimap}.
+     */
+    private static boolean arePrefixesPresent(ArgumentMultimap argumentMultimap, Prefix... prefixes) {
+        return Stream.of(prefixes).allMatch(prefix -> argumentMultimap.getValue(prefix).isPresent());
+    }
+
+    private static boolean areAllFieldsSupplied(ArgumentMultimap argumentMultimap, Prefix... prefixes) {
+        return Stream.of(prefixes).allMatch(prefix -> !Optional.of(argumentMultimap.getValue(prefix)).equals(""));
+    }
+}
+```
+###### /java/seedu/address/model/AddressBook.java
+``` java
+    /**
+     * Sorts all students in HR+ based on {@code sortField} in ascending order
+     */
+    public void sortAsc(SortCommand.SortField sortField) {
+        switch (sortField) {
+        case GPA:
+            persons.sortPersonsGradePointAverageAsc();
+            break;
+
+        case NAME:
+            persons.sortPersonsNameAsc();
+            break;
+
+        case RATING:
+            persons.sortPersonsRatingAsc();
+            break;
+
+        default:
+            throw new IllegalArgumentException(MESSAGE_INVALID_SORT_FIELD);
+        }
+    }
+
+    /**
+     * Sorts all students in HR+ based on {@code sortField} in descending order
+     */
+    public void sortDesc(SortCommand.SortField sortField) {
+        switch (sortField) {
+        case GPA:
+            persons.sortPersonsGradePointAverageDesc();
+            break;
+
+        case NAME:
+            persons.sortPersonsNameDesc();
+            break;
+
+        case RATING:
+            persons.sortPersonsRatingDesc();
+            break;
+
+        default:
+            throw new IllegalArgumentException(MESSAGE_INVALID_SORT_FIELD);
+        }
+    }
+
+```
+###### /java/seedu/address/model/ModelManager.java
+``` java
+    @Override
+    public void sortPersonListAscOrder(SortCommand.SortField sortField) {
+        addressBook.sortAsc(sortField);
+        Predicate<? super Person> currPredicate = filteredPersons.getPredicate();
+        filteredPersons.setPredicate(currPredicate);
+    }
+
+    @Override
+    public void sortPersonListDescOrder(SortCommand.SortField sortField) {
+        addressBook.sortDesc(sortField);
+        Predicate<? super Person> currPredicate = filteredPersons.getPredicate();
+        filteredPersons.setPredicate(currPredicate);
+    }
+
+```
+###### /java/seedu/address/model/person/UniquePersonList.java
+``` java
+    /**
+     * Sorts the list based on overall rating in ascending order
+     */
+    public void sortPersonsRatingAsc() {
+        Collections.sort(internalList, Person::compareByOverallRating);
+    }
+
+    /**
+     * Sorts the list based on overall rating in descending order
+     */
+    public void sortPersonsRatingDesc() {
+        Collections.sort(internalList, Person::compareByOverallRating);
+        Collections.reverse(internalList);
+    }
+
+    /**
+     * Sorts the list based on GPA in ascending order
+     */
+    public void sortPersonsGradePointAverageAsc() {
+        Collections.sort(internalList, Person::compareByGradePointAverage);
+    }
+
+    /**
+     * Sorts the list based on GPA in descending order
+     */
+    public void sortPersonsGradePointAverageDesc() {
+        Collections.sort(internalList, Person::compareByGradePointAverage);
+        Collections.reverse(internalList);
+    }
+
+    /**
+     * Sorts the list based on name in ascending order
+     */
+    public void sortPersonsNameAsc() {
+        Collections.sort(internalList, Person::compareByName);
+    }
+
+    /**
+     * Sorts the list based on name in descending order
+     */
+    public void sortPersonsNameDesc() {
+        Collections.sort(internalList, Person::compareByName);
+        Collections.reverse(internalList);
+    }
+
 ```

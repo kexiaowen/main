@@ -1,221 +1,663 @@
 # Ang-YC
-###### /java/seedu/address/ui/UiResizer.java
+###### /java/seedu/address/commons/events/ui/InfoPanelChangedEvent.java
 ``` java
 /**
- * Ui Resizer, a utility to manage resize event of Stage such as resizable window
+ * Indicates a change in Info Panel (Used for automated testing purpose)
  */
-public class UiResizer {
+public class InfoPanelChangedEvent extends Event {
+    public static final EventType<InfoPanelChangedEvent> INFO_PANEL_EVENT =
+            new EventType<>("InfoPanelChangedEvent");
 
-    private Stage stage;
-
-    private double lastX;
-    private double lastY;
-    private double lastWidth;
-    private double lastHeight;
-
-    public UiResizer(Stage stage, GuiSettings guiSettings, double minWidth, double minHeight, int cornerSize) {
-        this.stage = stage;
-
-        // Set listeners
-        ResizeListener resizeListener = new ResizeListener(stage, minWidth, minHeight, cornerSize);
-        stage.getScene().addEventHandler(MouseEvent.MOUSE_MOVED, resizeListener);
-        stage.getScene().addEventHandler(MouseEvent.MOUSE_PRESSED, resizeListener);
-        stage.getScene().addEventHandler(MouseEvent.MOUSE_DRAGGED, resizeListener);
-        stage.getScene().addEventHandler(MouseEvent.MOUSE_RELEASED, resizeListener);
-
-        // Set last value
-        lastX = guiSettings.getWindowCoordinates().x;
-        lastY = guiSettings.getWindowCoordinates().y;
-        lastWidth = guiSettings.getWindowWidth();
-        lastHeight = guiSettings.getWindowHeight();
+    public InfoPanelChangedEvent() {
+        this(INFO_PANEL_EVENT);
     }
 
-    private Rectangle2D getScreenBound() {
-        return Screen.getPrimary().getVisualBounds();
-    }
-
-    /**
-     * Maximize / Un-maximize the stage, polyfill for native {@link Stage#setMaximized} feature
-     */
-    public void toggleMaximize() {
-        Rectangle2D screenBound = getScreenBound();
-        double stageX = stage.getX();
-        double stageY = stage.getY();
-        double stageWidth = stage.getWidth();
-        double stageHeight = stage.getHeight();
-
-        if (stageWidth == screenBound.getWidth() && stageHeight == screenBound.getHeight()) {
-            stage.setX(lastX);
-            stage.setY(lastY);
-            stage.setWidth(lastWidth);
-            stage.setHeight(lastHeight);
-        } else {
-            lastX = stageX;
-            lastY = stageY;
-            lastWidth = stageWidth;
-            lastHeight = stageHeight;
-            stage.setX(screenBound.getMinX());
-            stage.setY(screenBound.getMinY());
-            stage.setWidth(screenBound.getWidth());
-            stage.setHeight(screenBound.getHeight());
-        }
-    }
-
-    /**
-     * Manage the resize event during mouse move and drag
-     */
-    static class ResizeListener implements EventHandler<MouseEvent> {
-        private Stage stage;
-
-        private boolean holding = false;
-        private int cornerSize;
-
-        // Starting position of resizing
-        private double startX = 0;
-        private double startY = 0;
-
-        // Min sizes for stage
-        private double minWidth;
-        private double minHeight;
-
-        public ResizeListener(Stage stage, double minWidth, double minHeight, int borderSize) {
-            this.stage = stage;
-            this.minWidth = minWidth;
-            this.minHeight = minHeight;
-            this.cornerSize = borderSize;
-        }
-
-        @Override
-        public void handle(MouseEvent mouseEvent) {
-            String eventType = mouseEvent.getEventType().getName();
-            Scene scene = stage.getScene();
-
-            double mouseX = mouseEvent.getSceneX();
-            double mouseY = mouseEvent.getSceneY();
-
-
-            switch (eventType) {
-
-            case "MOUSE_MOVED":
-                scene.setCursor((isResizePosition(mouseX, mouseY) || holding) ? Cursor.SE_RESIZE : Cursor.DEFAULT);
-                break;
-
-            case "MOUSE_RELEASED":
-                holding = false;
-                scene.setCursor(Cursor.DEFAULT);
-                break;
-
-            case "MOUSE_PRESSED":
-                // Left click only
-                if (MouseButton.PRIMARY.equals(mouseEvent.getButton())) {
-                    holding = isResizePosition(mouseX, mouseY);
-                    startX = stage.getWidth() - mouseX;
-                    startY = stage.getHeight() - mouseY;
-                }
-                break;
-
-            case "MOUSE_DRAGGED":
-                if (holding) {
-                    setStageWidth(mouseX + startX);
-                    setStageHeight(mouseY + startY);
-                }
-                break;
-
-            default:
-
-            }
-        }
-
-        /**
-         * Check if the X and Y coordinate of the mouse are in the range of draggable position
-         *
-         * @param x coordinate of the {@code MouseEvent}
-         * @param y coordinate of the {@code MouseEvent}
-         * @return {@code true} if the coordinate is in the range of draggable position, {@code false} otherwise
-         */
-        private boolean isResizePosition(double x, double y) {
-            Scene scene = stage.getScene();
-            return (x > scene.getWidth() - cornerSize && y > scene.getHeight() - cornerSize);
-        }
-
-        /**
-         * Set the width of the stage, with validation to be larger than {@code minWidth}
-         *
-         * @param width of the stage
-         */
-        private void setStageWidth(double width) {
-            stage.setWidth(Math.max(width, minWidth));
-        }
-
-        /**
-         * Set the height of the stage, with validation to be larger than {@code minHeight}
-         *
-         * @param height of the stage
-         */
-        private void setStageHeight(double height) {
-            stage.setHeight(Math.max(height, minHeight));
-        }
-
+    public InfoPanelChangedEvent(EventType<? extends Event> eventType) {
+        super(eventType);
     }
 }
 ```
-###### /java/seedu/address/ui/TitleBar.java
+###### /java/seedu/address/commons/events/ui/MaximizeAppRequestEvent.java
+``` java
+/**
+ * Indicates a request for App minimize
+ */
+public class MaximizeAppRequestEvent extends BaseEvent {
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
+    }
+}
+```
+###### /java/seedu/address/commons/events/ui/MinimizeAppRequestEvent.java
+``` java
+/**
+ * Indicates a request for App minimize
+ */
+public class MinimizeAppRequestEvent extends BaseEvent {
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
+    }
+}
+```
+###### /java/seedu/address/commons/events/ui/PersonChangedEvent.java
+``` java
+/**
+ * Indicates a person change in address book
+ */
+public class PersonChangedEvent extends BaseEvent {
+
+    private final Change<? extends Person> personChanged;
+
+    public PersonChangedEvent(Change<? extends Person> personChanged) {
+        this.personChanged = personChanged;
+    }
+
+    public Change<? extends Person> getPersonChanged() {
+        return personChanged;
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
+    }
+}
+```
+###### /java/seedu/address/commons/events/ui/ShowPanelRequestEvent.java
+``` java
+/**
+ * Indicates a request for panel show
+ */
+public class ShowPanelRequestEvent extends BaseEvent {
+
+    private final String panel;
+
+    public ShowPanelRequestEvent(String panel) {
+        this.panel = panel;
+    }
+
+    public String getRequestedPanel() {
+        return panel;
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
+    }
+}
+```
+###### /java/seedu/address/commons/util/UiUtil.java
+``` java
+/**
+ * Helper functions for handling UI information
+ */
+public class UiUtil {
+    /**
+     * Convert double into string with {@code points} amount of decimal places
+     * @param decimal The double to be formatted
+     * @param points Number of decimal places
+     * @return the formatted string with {@code points} number of decimal places
+     */
+    public static String toFixed(double decimal, int points) {
+        return toFixed(String.valueOf(decimal), points);
+    }
+
+    /**
+     * Convert string representation of decimal into string with {@code points} amount of decimal places
+     * @param decimal The string representation of decimal to be formatted
+     * @param points Number of decimal places
+     * @return the formatted string with {@code points} number of decimal places
+     */
+    public static String toFixed(String decimal, int points) {
+        double value = Double.parseDouble(decimal);
+        String pattern = "0";
+
+        if (points > 0) {
+            pattern += ".";
+            pattern += StringUtils.repeat("0", points);
+        }
+
+        DecimalFormat df = new DecimalFormat(pattern);
+        return df.format(value);
+    }
+
+    /**
+     * Convert JavaFX color into web hex color
+     * @param color to be converted
+     * @return the web hex String representation of the color
+     */
+    public static String colorToHex(Color color) {
+        return String.format("#%02X%02X%02X",
+                (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
+    }
+}
+```
+###### /java/seedu/address/logic/commands/InterviewCommand.java
+``` java
+/**
+ * Schedule interview of an existing person in the address book.
+ */
+public class InterviewCommand extends UndoableCommand {
+
+    public static final String COMMAND_WORD = "interview";
+
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Schedule interview for the person "
+            + "by the index number used in the last person listing. "
+            + "Existing scheduled date will be overwritten by the input value.\n"
+            + "Parameters: INDEX (must be a positive integer) "
+            + "DATETIME (parse by natural language)\n"
+            + "Example: " + COMMAND_WORD + " 1 next Friday at 3pm";
+
+    public static final String MESSAGE_INTERVIEW_PERSON_SUCCESS =
+            "Interview of person named %1$s has been scheduled on %2$s";
+    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
+
+    private final Index index;
+    private final LocalDateTime dateTime;
+
+    private Person personToInterview;
+    private Person scheduledPerson;
+
+    /**
+     * @param index of the person in the filtered person list to schedule interview
+     * @param dateTime of the interview
+     */
+    public InterviewCommand(Index index, LocalDateTime dateTime) {
+        requireNonNull(index);
+        requireNonNull(dateTime);
+
+        this.index    = index;
+        this.dateTime = dateTime;
+    }
+
+    public Index getIndex() {
+        return index;
+    }
+
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
+    public Person getPersonToInterview() {
+        return personToInterview;
+    }
+
+    @Override
+    public CommandResult executeUndoableCommand() throws CommandException {
+        try {
+            model.updatePerson(personToInterview, scheduledPerson);
+        } catch (DuplicatePersonException dpe) {
+            throw new CommandException(MESSAGE_DUPLICATE_PERSON);
+        } catch (PersonNotFoundException pnfe) {
+            throw new AssertionError("The target person cannot be missing");
+        }
+
+        return new CommandResult(String.format(MESSAGE_INTERVIEW_PERSON_SUCCESS,
+                scheduledPerson.getName(), dateTime.toString()));
+    }
+
+    @Override
+    protected void preprocessUndoableCommand() throws CommandException {
+        List<Person> lastShownList = model.getFilteredPersonList();
+
+        if (index.getZeroBased() >= lastShownList.size()) {
+            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        }
+
+        personToInterview = lastShownList.get(index.getZeroBased());
+        scheduledPerson = createScheduledPerson(personToInterview, dateTime);
+    }
+
+    /**
+     * Creates and returns a {@code Person} with the details of {@code personToInterview}
+     * with updated with {@code dateTime}.
+     */
+    private static Person createScheduledPerson(Person personToInterview, LocalDateTime dateTime) {
+        requireAllNonNull(personToInterview, dateTime);
+
+        return new Person(personToInterview.getName(), personToInterview.getPhone(), personToInterview.getEmail(),
+                personToInterview.getAddress(), personToInterview.getUniversity(),
+                personToInterview.getExpectedGraduationYear(),
+                personToInterview.getMajor(), personToInterview.getGradePointAverage(),
+                personToInterview.getJobApplied(), personToInterview.getRating(),
+                personToInterview.getResume(), personToInterview.getProfileImage(), personToInterview.getComment(),
+                new InterviewDate(dateTime), personToInterview.getStatus(),
+                personToInterview.getTags());
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        // Short circuit if same object
+        if (other == this) {
+            return true;
+        }
+
+        // instanceof handles nulls
+        if (!(other instanceof InterviewCommand)) {
+            return false;
+        }
+
+        // State check
+        InterviewCommand i = (InterviewCommand) other;
+        return getIndex().equals(i.getIndex())
+                && getDateTime().equals(i.getDateTime())
+                && Objects.equals(getPersonToInterview(), i.getPersonToInterview());
+    }
+}
+```
+###### /java/seedu/address/logic/parser/EditCommandParser.java
 ``` java
     /**
-     * Opens the help window.
+     * Parses {@code Optional<ProfileImage> profileImage} into a {@code Optional<ProfileImage>}
+     * if {@code profileImage} is non-empty.
+     * If profile image is present and equals to empty string, it will be parsed into a
+     * {@code ProfileImage} containing null value.
      */
-    @FXML
-    public void handleHelp(MouseEvent event) {
-        if (MouseButton.PRIMARY.equals(event.getButton())) {
-            HelpWindow helpWindow = new HelpWindow();
-            helpWindow.show();
+    private Optional<ProfileImage> parseProfileImageForEdit(Optional<String> profileImage)
+            throws IllegalValueException {
+        assert profileImage != null;
+        if (!profileImage.isPresent()) {
+            return Optional.empty();
+        }
+        if (profileImage.get().equals("")) {
+            return Optional.of(new ProfileImage(null));
+        } else {
+            return ParserUtil.parseProfileImage(profileImage);
         }
     }
 
     /**
-     * Minimizes the application.
+     * Parses {@code Optional<Comment> comment} into a {@code Optional<Comment>} if {@code comment} is non-empty.
      */
-    @FXML
-    private void handleMinimize(MouseEvent event) {
-        if (MouseButton.PRIMARY.equals(event.getButton())) {
-            raise(new MinimizeAppRequestEvent());
+    private Optional<Comment> parseCommentForEdit(Optional<String> comment) throws IllegalValueException {
+        assert comment != null;
+        if (!comment.isPresent()) {
+            return Optional.empty();
+        }
+        if (comment.get().equals("")) {
+            return Optional.of(new Comment(null));
+        } else {
+            return ParserUtil.parseComment(comment);
+        }
+    }
+```
+###### /java/seedu/address/logic/parser/InterviewCommandParser.java
+``` java
+/**
+ * Parses input arguments and creates a new InterviewCommand object
+ */
+public class InterviewCommandParser implements Parser<InterviewCommand> {
+
+    public static final String MESSAGE_DATETIME_PARSE_FAIL = "Failed to parse the date time from the string: %1$s";
+
+    /**
+     * Parses the given {@code String} of arguments in the context of the InterviewCommand
+     * and returns an InterviewCommand object for execution.
+     * @throws ParseException if the user input does not conform the expected format
+     */
+    public InterviewCommand parse(String args) throws ParseException {
+        try {
+            // Parse the arguments
+            String[] arguments = args.trim().split("\\s+", 2);
+            if (arguments.length != 2) {
+                throw new IllegalValueException("Invalid command, expected 2 arguments");
+            }
+
+            // Parse the index
+            Index index = ParserUtil.parseIndex(arguments[0]);
+
+            // Parse the date time
+            LocalDateTime dateTime = parseDateFromNaturalLanguage(arguments[1]);
+
+            return new InterviewCommand(index, dateTime);
+
+        } catch (ParseException pe) {
+            throw pe;
+
+        } catch (IllegalValueException ive) {
+            throw new ParseException(
+                    String.format(MESSAGE_INVALID_COMMAND_FORMAT, InterviewCommand.MESSAGE_USAGE));
         }
     }
 
     /**
-     * Maximizes the application.
+     * Parses the given natural language {@code String} and returns a {@code LocalDateTime} object
+     * that represents the English representation of the date and time
+     * @throws ParseException if the phrase cannot be converted to date and time
      */
-    @FXML
-    private void handleMaximize(MouseEvent event) {
-        if (MouseButton.PRIMARY.equals(event.getButton())) {
-            raise(new MaximizeAppRequestEvent());
+    private LocalDateTime parseDateFromNaturalLanguage(String naturalLanguage) throws ParseException {
+        com.joestelmach.natty.Parser parser = new com.joestelmach.natty.Parser();
+
+        List<DateGroup> groups = parser.parse(naturalLanguage);
+        if (groups.size() < 1) {
+            throw new ParseException(String.format(MESSAGE_DATETIME_PARSE_FAIL, naturalLanguage));
+        }
+
+        List<Date> dates = groups.get(0).getDates();
+        if (dates.size() < 1) {
+            throw new ParseException(String.format(MESSAGE_DATETIME_PARSE_FAIL, naturalLanguage));
+        }
+
+        Date date = dates.get(0);
+        return LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
+    }
+}
+```
+###### /java/seedu/address/logic/parser/ParserUtil.java
+``` java
+    /**
+     * Parses a {@code String profileImage} into a {@code ProfileImage}.
+     * Leading and trailing whitespaces will be trimmed.
+     *
+     * @throws IllegalValueException if the given {@code profileImage} is invalid.
+     */
+    public static ProfileImage parseProfileImage(String profileImage) throws IllegalValueException {
+        requireNonNull(profileImage);
+        String trimmedProfileImage = profileImage.trim();
+        if (!ProfileImage.isValidFile(trimmedProfileImage)) {
+            throw new IllegalValueException(ProfileImage.MESSAGE_IMAGE_CONSTRAINTS);
+        }
+        return new ProfileImage(trimmedProfileImage);
+    }
+
+    /**
+     * Parses a {@code Optional<String> profileImage} into an {@code Optional<ProfileImage>}
+     * if {@code profileImage} is present.
+     * See header comment of this class regarding the use of {@code Optional} parameters.
+     */
+    public static Optional<ProfileImage> parseProfileImage(Optional<String> profileImage) throws IllegalValueException {
+        requireNonNull(profileImage);
+        return profileImage.isPresent() ? Optional.of(parseProfileImage(profileImage.get())) : Optional.empty();
+    }
+
+    /**
+     * Parses a {@code String comment} into a {@code Comment}.
+     * Leading and trailing whitespaces will be trimmed.
+     *
+     * @throws IllegalValueException if the given {@code comment} is invalid.
+     */
+    public static Comment parseComment(String comment) throws IllegalValueException {
+        requireNonNull(comment);
+        String trimmedComment = comment.trim();
+        if (!Comment.isValidComment(trimmedComment)) {
+            throw new IllegalValueException(Comment.MESSAGE_COMMENT_CONSTRAINTS);
+        }
+        return new Comment(trimmedComment);
+    }
+
+    /**
+     * Parses a {@code Optional<String> comment} into an {@code Optional<Comment>} if {@code comment} is present.
+     * See header comment of this class regarding the use of {@code Comment} parameters.
+     */
+    public static Optional<Comment> parseComment(Optional<String> comment) throws IllegalValueException {
+        requireNonNull(comment);
+        return comment.isPresent() ? Optional.of(parseComment(comment.get())) : Optional.empty();
+    }
+}
+```
+###### /java/seedu/address/model/person/Comment.java
+``` java
+/**
+ * Represents a Person's comment in the address book.
+ * Guarantees: immutable; is valid as declared in {@link #isValidComment(String)}
+ */
+public class Comment {
+
+    public static final String MESSAGE_COMMENT_CONSTRAINTS = "Person comment can take any values";
+    public static final String COMMENT_VALIDATION_REGEX = ".*";
+
+    public final String value;
+
+    /**
+     * Constructs a {@code Comment}.
+     *
+     * @param comment A valid comment.
+     */
+    public Comment(String comment) {
+        if (isNull(comment)) {
+            this.value = null;
+        } else {
+            checkArgument(isValidComment(comment), MESSAGE_COMMENT_CONSTRAINTS);
+            this.value = comment;
         }
     }
 
     /**
-     * Closes the application.
+     * Returns true if a given string is a valid comment.
+     * By default any string are valid
      */
-    @FXML
-    private void handleExit(MouseEvent event) {
-        if (MouseButton.PRIMARY.equals(event.getButton())) {
-            raise(new ExitAppRequestEvent());
+    public static boolean isValidComment(String test) {
+        return test.matches(COMMENT_VALIDATION_REGEX);
+    }
+
+    @Override
+    public String toString() {
+        return value;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other == this // Short circuit if same object
+                || (other instanceof Comment // instanceof handles nulls
+                && Objects.equals(this.value, ((Comment) other).value)); // State check
+    }
+
+    @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
+
+}
+```
+###### /java/seedu/address/model/person/InterviewDate.java
+``` java
+/**
+ * Represents a Person's interview date in the address book.
+ * Guarantees: immutable
+ */
+public class InterviewDate {
+    public static final String MESSAGE_INTERVIEW_DATE_XML_ERROR =
+            "Interview date must be in epoch format, failed to parse from XML";
+    public static final ZoneOffset LOCAL_ZONE_OFFSET = ZoneId.systemDefault().getRules().getOffset(LocalDateTime.now());
+
+    public final LocalDateTime dateTime;
+    public final String value;
+
+    /**
+     * Constructs a {@code InterviewDate}.
+     */
+    public InterviewDate() {
+        this((LocalDateTime) null);
+    }
+
+    /**
+     * Constructs a {@code InterviewDate}.
+     * @param timestamp A epoch timestamp
+     */
+    public InterviewDate(Long timestamp) {
+        this(LocalDateTime.ofEpochSecond(timestamp, 0, ZoneOffset.UTC));
+    }
+
+    /**
+     * Constructs a {@code InterviewDate}.
+     * @param dateTime of the person
+     */
+    public InterviewDate(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
+        if (dateTime != null) {
+            this.value = String.valueOf(dateTime.toEpochSecond(ZoneOffset.UTC));
+        } else {
+            this.value = null;
         }
     }
 
-    @Subscribe
-    private void handleShowHelpEvent(ShowHelpRequestEvent event) {
-        logger.info(LogsCenter.getEventHandlingLogMessage(event));
-        HelpWindow helpWindow = new HelpWindow();
-        helpWindow.show();
+    public LocalDateTime getDateTime() {
+        return dateTime;
     }
 
-    @Subscribe
-    public void handleAddressBookChangedEvent(AddressBookChangedEvent abce) {
-        long now = clock.millis();
-        String lastUpdated = new Date(now).toString();
-        logger.info(LogsCenter.getEventHandlingLogMessage(abce, "Setting last updated status to " + lastUpdated));
-        setSyncStatus(String.format(SYNC_STATUS_UPDATED, lastUpdated));
+    @Override
+    public String toString() {
+        return value;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+
+        if (!(other instanceof InterviewDate)) {
+            return false;
+        }
+
+        InterviewDate i = (InterviewDate) other;
+        return Objects.equals(getDateTime(), i.getDateTime());
+    }
+
+    @Override
+    public int hashCode() {
+        return getDateTime().hashCode();
+    }
+}
+```
+###### /java/seedu/address/model/person/ProfileImage.java
+``` java
+/**
+ * Represents a Person's profile image in the address book.
+ * Guarantees: immutable; is valid as declared in {@link #isValidFile(String)}
+ */
+public class ProfileImage {
+    public static final String MESSAGE_IMAGE_CONSTRAINTS =
+            "Profile image file should be at least 1 character long, exist in the same directory "
+                    + "as the jar executable, smaller than 1MB and readable";
+    private static final int ONEMEGABYTE = 1 * 1024 * 1024;
+    private static final String IMAGE_VALIDATION_REGEX = ".*\\S.*";
+    public final String value;
+    public final String userInput;
+    private boolean isHashed;
+
+    /**
+     * Constructs a {@code ProfileImage}.
+     *
+     * @param fileName A valid fileName.
+     */
+    public ProfileImage(String fileName) {
+        isHashed = false;
+        if (isNull(fileName)) {
+            this.value = null;
+            this.userInput = null;
+        } else {
+            checkArgument(isValidFile(fileName), MESSAGE_IMAGE_CONSTRAINTS);
+            this.value = fileName;
+            userInput = fileName;
+        }
+    }
+
+    public ProfileImage(String storageFileName, String userFileName) {
+        isHashed = true;
+        if (isNull(storageFileName)) {
+            this.value = null;
+            this.userInput = null;
+        } else {
+            checkArgument(isValidFile(storageFileName), MESSAGE_IMAGE_CONSTRAINTS);
+            this.value = storageFileName;
+            userInput = userFileName;
+        }
+    }
+    /**
+     * Return the loaded {@code Image} of the person's Profile Image,
+     * resized to 100px for performance issue
+     * @return the image in {@code Image}
+     */
+    public Image getImage() {
+        try {
+            return new Image(getFile().toURI().toString(),
+                    100d, 0d, true, true, false);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Return the {@code File} of the image
+     * @return the image in {@code File}
+     */
+    private File getFile() {
+        if (this.value == null) {
+            return null;
+        }
+        return getFileFromPath(this.value);
+    }
+
+    /**
+     * Return the {@code File} representation of the path
+     * @param path of the image
+     * @return the {@code File} representation
+     */
+    private static File getFileFromPath(String path) {
+        String userDir = System.getProperty("user.dir");
+        return new File(userDir + File.separator + path);
+    }
+
+    /**
+     * Returns true if a given string is a valid file path,
+     * however it doesn't validate if it is a valid image file
+     * due to there are too many different image types
+     */
+    public static boolean isValidFile(String test) {
+        requireNonNull(test);
+
+        if (!test.matches(IMAGE_VALIDATION_REGEX)) {
+            return false;
+        }
+
+        File imageFile = getFileFromPath(test);
+
+        if (imageFile.isDirectory() || !imageFile.exists() || imageFile.length() > ONEMEGABYTE) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public boolean isHashed() {
+        return isHashed;
+    }
+
+    @Override
+    public String toString() {
+        return userInput;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other == this // Short circuit if same object
+                || (other instanceof ProfileImage // instanceof handles nulls
+                && ((this.value == null && ((ProfileImage) other).value == null) //both value are null
+                || (isHashed && ((ProfileImage) other).isHashed) ? isHashEqual(this.value, ((ProfileImage) other).value)
+                : this.userInput.equals(((ProfileImage) other).userInput))); // state check
+    }
+    /**
+     * Checks whether the hash of two resume are the same
+     * @param first resume
+     * @param second resume
+     * @return same as true or false otherwise
+     */
+    private boolean isHashEqual(String first, String second) {
+        assert(first.split("_").length == 2);
+        String firstHash = first.split("_")[1];
+        String secondHash = second.split("_")[1];
+        return firstHash.equals(secondHash);
+    }
+
+    @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
+
 }
 ```
 ###### /java/seedu/address/ui/InfoPanel.java
@@ -458,95 +900,6 @@ public class InfoPanel extends UiPart<Region> {
         }
     }
 }
-```
-###### /java/seedu/address/ui/PersonCard.java
-``` java
-    public PersonCard(Person person, int displayedIndex) {
-        super(FXML);
-
-        this.person = person;
-        this.index = displayedIndex - 1;
-        updatePersonCard();
-
-        registerAsAnEventHandler(this);
-    }
-
-    /**
-     * Update the person with the latest information
-     * It can be updated from address book change or selection change
-     */
-    private void updatePersonCard() {
-        cardPhotoMask.widthProperty().addListener((observable, oldValue, newValue) -> resizePhoto());
-        cardPhotoMask.heightProperty().addListener((observable, oldValue, newValue) -> resizePhoto());
-
-        Image profileImage = person.getProfileImage().getImage();
-        if (profileImage == null) {
-            cardPhoto.setImage(null);
-        } else {
-            try {
-                cardPhoto.setImage(profileImage);
-            } catch (Exception e) {
-                logger.info("Failed to load image file");
-            }
-        }
-
-        cardPersonName.setText(person.getName().fullName);
-        cardPersonUniversity.setText(person.getUniversity().value);
-        cardPersonEmail.setText(person.getEmail().value);
-        cardPersonContact.setText(person.getPhone().value);
-        cardPersonStatus.setText(person.getStatus().value);
-        cardPersonStatus.setStyle("-fx-background-color: " + UiUtil.colorToHex(person.getStatus().color));
-        cardPersonNumber.setText(String.valueOf(index + 1));
-
-        double rating = person.getRating().overallScore;
-        if (rating < 1e-3) {
-            cardPersonRating.setText("");
-            iconRating.setVisible(false);
-        } else {
-            cardPersonRating.setText(UiUtil.toFixed(rating, 2));
-            iconRating.setVisible(true);
-        }
-    }
-
-    /**
-     * Resize the photo to cover the ImageView
-     */
-    private void resizePhoto() {
-        cardPhoto.setFitWidth(cardPhotoMask.getWidth());
-        cardPhoto.setFitHeight(cardPhotoMask.getHeight());
-        Image image = cardPhoto.getImage();
-
-        if (image != null) {
-            double aspectRatio = cardPhotoMask.getWidth() / cardPhotoMask.getHeight();
-            double imageWidth = image.getWidth();
-            double imageHeight = image.getHeight();
-            double fitSize = Math.min(imageWidth, imageHeight);
-            double actualSize = fitSize * aspectRatio;
-
-            if (imageWidth > imageHeight) {
-                double x = (imageWidth - actualSize) / 2.0;
-                cardPhoto.setViewport(new Rectangle2D(x, 0, actualSize, fitSize));
-            } else {
-                double y = (imageHeight - actualSize) / 2.0;
-                cardPhoto.setViewport(new Rectangle2D(0, y, fitSize, actualSize));
-            }
-        }
-    }
-
-    @Subscribe
-    private void handlePersonChangedEvent(PersonChangedEvent event) {
-        ListChangeListener.Change<? extends Person> changes = event.getPersonChanged();
-        if (person != null) {
-            while (changes.next()) {
-                for (int i = changes.getFrom(); i < changes.getTo(); i++) {
-                    if (i == index) {
-                        person = changes.getList().get(i);
-                        updatePersonCard();
-                    }
-                }
-            }
-        }
-    }
 ```
 ###### /java/seedu/address/ui/MainWindow.java
 ``` java
@@ -948,975 +1301,321 @@ public class PdfPanel extends UiPart<Region> {
     }
 }
 ```
-###### /java/seedu/address/model/person/InterviewDate.java
+###### /java/seedu/address/ui/PersonCard.java
 ``` java
-/**
- * Represents a Person's interview date in the address book.
- * Guarantees: immutable
- */
-public class InterviewDate {
-    public static final String MESSAGE_INTERVIEW_DATE_XML_ERROR =
-            "Interview date must be in epoch format, failed to parse from XML";
-    public static final ZoneOffset LOCAL_ZONE_OFFSET = ZoneId.systemDefault().getRules().getOffset(LocalDateTime.now());
+    public PersonCard(Person person, int displayedIndex) {
+        super(FXML);
 
-    public final LocalDateTime dateTime;
-    public final String value;
+        this.person = person;
+        this.index = displayedIndex - 1;
+        updatePersonCard();
 
-    /**
-     * Constructs a {@code InterviewDate}.
-     */
-    public InterviewDate() {
-        this((LocalDateTime) null);
+        registerAsAnEventHandler(this);
     }
 
     /**
-     * Constructs a {@code InterviewDate}.
-     * @param timestamp A epoch timestamp
+     * Update the person with the latest information
+     * It can be updated from address book change or selection change
      */
-    public InterviewDate(Long timestamp) {
-        this(LocalDateTime.ofEpochSecond(timestamp, 0, ZoneOffset.UTC));
-    }
+    private void updatePersonCard() {
+        cardPhotoMask.widthProperty().addListener((observable, oldValue, newValue) -> resizePhoto());
+        cardPhotoMask.heightProperty().addListener((observable, oldValue, newValue) -> resizePhoto());
 
-    /**
-     * Constructs a {@code InterviewDate}.
-     * @param dateTime of the person
-     */
-    public InterviewDate(LocalDateTime dateTime) {
-        this.dateTime = dateTime;
-        if (dateTime != null) {
-            this.value = String.valueOf(dateTime.toEpochSecond(ZoneOffset.UTC));
+        Image profileImage = person.getProfileImage().getImage();
+        if (profileImage == null) {
+            cardPhoto.setImage(null);
         } else {
-            this.value = null;
-        }
-    }
-
-    public LocalDateTime getDateTime() {
-        return dateTime;
-    }
-
-    @Override
-    public String toString() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-
-        if (!(other instanceof InterviewDate)) {
-            return false;
-        }
-
-        InterviewDate i = (InterviewDate) other;
-        return Objects.equals(getDateTime(), i.getDateTime());
-    }
-
-    @Override
-    public int hashCode() {
-        return getDateTime().hashCode();
-    }
-}
-```
-###### /java/seedu/address/model/person/ProfileImage.java
-``` java
-/**
- * Represents a Person's profile image in the address book.
- * Guarantees: immutable; is valid as declared in {@link #isValidFile(String)}
- */
-public class ProfileImage {
-    public static final String MESSAGE_IMAGE_CONSTRAINTS =
-            "Profile image file should be at least 1 character long, exist in the same directory "
-                    + "as the jar executable, smaller than 1MB and readable";
-    private static final int ONEMEGABYTE = 1 * 1024 * 1024;
-    private static final String IMAGE_VALIDATION_REGEX = ".*\\S.*";
-    public final String value;
-
-    /**
-     * Constructs a {@code ProfileImage}.
-     *
-     * @param fileName A valid fileName.
-     */
-    public ProfileImage(String fileName) {
-        if (isNull(fileName)) {
-            this.value = null;
-        } else {
-            checkArgument(isValidFile(fileName), MESSAGE_IMAGE_CONSTRAINTS);
-            this.value = fileName;
-        }
-    }
-
-    /**
-     * Return the loaded {@code Image} of the person's Profile Image,
-     * resized to 100px for performance issue
-     * @return the image in {@code Image}
-     */
-    public Image getImage() {
-        try {
-            return new Image(getFile().toURI().toString(),
-                    100d, 0d, true, true, false);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    /**
-     * Return the {@code File} of the image
-     * @return the image in {@code File}
-     */
-    private File getFile() {
-        if (this.value == null) {
-            return null;
-        }
-        return getFileFromPath(this.value);
-    }
-
-    /**
-     * Return the {@code File} representation of the path
-     * @param path of the image
-     * @return the {@code File} representation
-     */
-    private static File getFileFromPath(String path) {
-        String userDir = System.getProperty("user.dir");
-        return new File(userDir + File.separator + path);
-    }
-
-    /**
-     * Returns true if a given string is a valid file path,
-     * however it doesn't validate if it is a valid image file
-     * due to there are too many different image types
-     */
-    public static boolean isValidFile(String test) {
-        requireNonNull(test);
-
-        if (!test.matches(IMAGE_VALIDATION_REGEX)) {
-            return false;
-        }
-
-        File imageFile = getFileFromPath(test);
-
-        if (imageFile.isDirectory() || !imageFile.exists() || imageFile.length() > ONEMEGABYTE) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    @Override
-    public String toString() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other == this // Short circuit if same object
-                || (other instanceof ProfileImage // instanceof handles nulls
-                && Objects.equals(this.value, ((ProfileImage) other).value)); // State check
-    }
-
-    @Override
-    public int hashCode() {
-        return value.hashCode();
-    }
-
-}
-```
-###### /java/seedu/address/model/person/Comment.java
-``` java
-/**
- * Represents a Person's comment in the address book.
- * Guarantees: immutable; is valid as declared in {@link #isValidComment(String)}
- */
-public class Comment {
-
-    public static final String MESSAGE_COMMENT_CONSTRAINTS = "Person comment can take any values";
-    public static final String COMMENT_VALIDATION_REGEX = ".*";
-
-    public final String value;
-
-    /**
-     * Constructs a {@code Comment}.
-     *
-     * @param comment A valid comment.
-     */
-    public Comment(String comment) {
-        if (isNull(comment)) {
-            this.value = null;
-        } else {
-            checkArgument(isValidComment(comment), MESSAGE_COMMENT_CONSTRAINTS);
-            this.value = comment;
-        }
-    }
-
-    /**
-     * Returns true if a given string is a valid comment.
-     * By default any string are valid
-     */
-    public static boolean isValidComment(String test) {
-        return test.matches(COMMENT_VALIDATION_REGEX);
-    }
-
-    @Override
-    public String toString() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other == this // Short circuit if same object
-                || (other instanceof Comment // instanceof handles nulls
-                && Objects.equals(this.value, ((Comment) other).value)); // State check
-    }
-
-    @Override
-    public int hashCode() {
-        return value.hashCode();
-    }
-
-}
-```
-###### /java/seedu/address/commons/events/ui/InfoPanelChangedEvent.java
-``` java
-/**
- * Indicates a change in Info Panel (Used for automated testing purpose)
- */
-public class InfoPanelChangedEvent extends Event {
-    public static final EventType<InfoPanelChangedEvent> INFO_PANEL_EVENT =
-            new EventType<>("InfoPanelChangedEvent");
-
-    public InfoPanelChangedEvent() {
-        this(INFO_PANEL_EVENT);
-    }
-
-    public InfoPanelChangedEvent(EventType<? extends Event> eventType) {
-        super(eventType);
-    }
-}
-```
-###### /java/seedu/address/commons/events/ui/MinimizeAppRequestEvent.java
-``` java
-/**
- * Indicates a request for App minimize
- */
-public class MinimizeAppRequestEvent extends BaseEvent {
-
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
-    }
-}
-```
-###### /java/seedu/address/commons/events/ui/MaximizeAppRequestEvent.java
-``` java
-/**
- * Indicates a request for App minimize
- */
-public class MaximizeAppRequestEvent extends BaseEvent {
-
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
-    }
-}
-```
-###### /java/seedu/address/commons/events/ui/PersonChangedEvent.java
-``` java
-/**
- * Indicates a person change in address book
- */
-public class PersonChangedEvent extends BaseEvent {
-
-    private final Change<? extends Person> personChanged;
-
-    public PersonChangedEvent(Change<? extends Person> personChanged) {
-        this.personChanged = personChanged;
-    }
-
-    public Change<? extends Person> getPersonChanged() {
-        return personChanged;
-    }
-
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
-    }
-}
-```
-###### /java/seedu/address/commons/events/ui/ShowPanelRequestEvent.java
-``` java
-/**
- * Indicates a request for panel show
- */
-public class ShowPanelRequestEvent extends BaseEvent {
-
-    private final String panel;
-
-    public ShowPanelRequestEvent(String panel) {
-        this.panel = panel;
-    }
-
-    public String getRequestedPanel() {
-        return panel;
-    }
-
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
-    }
-}
-```
-###### /java/seedu/address/commons/util/UiUtil.java
-``` java
-/**
- * Helper functions for handling UI information
- */
-public class UiUtil {
-    /**
-     * Convert double into string with {@code points} amount of decimal places
-     * @param decimal The double to be formatted
-     * @param points Number of decimal places
-     * @return the formatted string with {@code points} number of decimal places
-     */
-    public static String toFixed(double decimal, int points) {
-        return toFixed(String.valueOf(decimal), points);
-    }
-
-    /**
-     * Convert string representation of decimal into string with {@code points} amount of decimal places
-     * @param decimal The string representation of decimal to be formatted
-     * @param points Number of decimal places
-     * @return the formatted string with {@code points} number of decimal places
-     */
-    public static String toFixed(String decimal, int points) {
-        double value = Double.parseDouble(decimal);
-        String pattern = "0";
-
-        if (points > 0) {
-            pattern += ".";
-            pattern += StringUtils.repeat("0", points);
-        }
-
-        DecimalFormat df = new DecimalFormat(pattern);
-        return df.format(value);
-    }
-
-    /**
-     * Convert JavaFX color into web hex color
-     * @param color to be converted
-     * @return the web hex String representation of the color
-     */
-    public static String colorToHex(Color color) {
-        return String.format("#%02X%02X%02X",
-                (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
-    }
-}
-```
-###### /java/seedu/address/logic/commands/InterviewCommand.java
-``` java
-/**
- * Schedule interview of an existing person in the address book.
- */
-public class InterviewCommand extends UndoableCommand {
-
-    public static final String COMMAND_WORD = "interview";
-
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Schedule interview for the person "
-            + "by the index number used in the last person listing. "
-            + "Existing scheduled date will be overwritten by the input value.\n"
-            + "Parameters: INDEX (must be a positive integer) "
-            + "DATETIME (parse by natural language)\n"
-            + "Example: " + COMMAND_WORD + " 1 next Friday at 3pm";
-
-    public static final String MESSAGE_INTERVIEW_PERSON_SUCCESS =
-            "Interview of person named %1$s has been scheduled on %2$s";
-    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
-
-    private final Index index;
-    private final LocalDateTime dateTime;
-
-    private Person personToInterview;
-    private Person scheduledPerson;
-
-    /**
-     * @param index of the person in the filtered person list to schedule interview
-     * @param dateTime of the interview
-     */
-    public InterviewCommand(Index index, LocalDateTime dateTime) {
-        requireNonNull(index);
-        requireNonNull(dateTime);
-
-        this.index    = index;
-        this.dateTime = dateTime;
-    }
-
-    public Index getIndex() {
-        return index;
-    }
-
-    public LocalDateTime getDateTime() {
-        return dateTime;
-    }
-
-    public Person getPersonToInterview() {
-        return personToInterview;
-    }
-
-    @Override
-    public CommandResult executeUndoableCommand() throws CommandException {
-        try {
-            model.updatePerson(personToInterview, scheduledPerson);
-        } catch (DuplicatePersonException dpe) {
-            throw new CommandException(MESSAGE_DUPLICATE_PERSON);
-        } catch (PersonNotFoundException pnfe) {
-            throw new AssertionError("The target person cannot be missing");
-        }
-
-        return new CommandResult(String.format(MESSAGE_INTERVIEW_PERSON_SUCCESS,
-                scheduledPerson.getName(), dateTime.toString()));
-    }
-
-    @Override
-    protected void preprocessUndoableCommand() throws CommandException {
-        List<Person> lastShownList = model.getFilteredPersonList();
-
-        if (index.getZeroBased() >= lastShownList.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-
-        personToInterview = lastShownList.get(index.getZeroBased());
-        scheduledPerson = createScheduledPerson(personToInterview, dateTime);
-    }
-
-    /**
-     * Creates and returns a {@code Person} with the details of {@code personToInterview}
-     * with updated with {@code dateTime}.
-     */
-    private static Person createScheduledPerson(Person personToInterview, LocalDateTime dateTime) {
-        requireAllNonNull(personToInterview, dateTime);
-
-        return new Person(personToInterview.getName(), personToInterview.getPhone(), personToInterview.getEmail(),
-                personToInterview.getAddress(), personToInterview.getUniversity(),
-                personToInterview.getExpectedGraduationYear(),
-                personToInterview.getMajor(), personToInterview.getGradePointAverage(),
-                personToInterview.getJobApplied(), personToInterview.getRating(),
-                personToInterview.getResume(), personToInterview.getProfileImage(), personToInterview.getComment(),
-                new InterviewDate(dateTime), personToInterview.getStatus(),
-                personToInterview.getTags());
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        // Short circuit if same object
-        if (other == this) {
-            return true;
-        }
-
-        // instanceof handles nulls
-        if (!(other instanceof InterviewCommand)) {
-            return false;
-        }
-
-        // State check
-        InterviewCommand i = (InterviewCommand) other;
-        return getIndex().equals(i.getIndex())
-                && getDateTime().equals(i.getDateTime())
-                && Objects.equals(getPersonToInterview(), i.getPersonToInterview());
-    }
-}
-```
-###### /java/seedu/address/logic/parser/ParserUtil.java
-``` java
-    /**
-     * Parses a {@code String profileImage} into a {@code ProfileImage}.
-     * Leading and trailing whitespaces will be trimmed.
-     *
-     * @throws IllegalValueException if the given {@code profileImage} is invalid.
-     */
-    public static ProfileImage parseProfileImage(String profileImage) throws IllegalValueException {
-        requireNonNull(profileImage);
-        String trimmedProfileImage = profileImage.trim();
-        if (!ProfileImage.isValidFile(trimmedProfileImage)) {
-            throw new IllegalValueException(ProfileImage.MESSAGE_IMAGE_CONSTRAINTS);
-        }
-        return new ProfileImage(trimmedProfileImage);
-    }
-
-    /**
-     * Parses a {@code Optional<String> profileImage} into an {@code Optional<ProfileImage>}
-     * if {@code profileImage} is present.
-     * See header comment of this class regarding the use of {@code Optional} parameters.
-     */
-    public static Optional<ProfileImage> parseProfileImage(Optional<String> profileImage) throws IllegalValueException {
-        requireNonNull(profileImage);
-        return profileImage.isPresent() ? Optional.of(parseProfileImage(profileImage.get())) : Optional.empty();
-    }
-
-    /**
-     * Parses a {@code String comment} into a {@code Comment}.
-     * Leading and trailing whitespaces will be trimmed.
-     *
-     * @throws IllegalValueException if the given {@code comment} is invalid.
-     */
-    public static Comment parseComment(String comment) throws IllegalValueException {
-        requireNonNull(comment);
-        String trimmedComment = comment.trim();
-        if (!Comment.isValidComment(trimmedComment)) {
-            throw new IllegalValueException(Comment.MESSAGE_COMMENT_CONSTRAINTS);
-        }
-        return new Comment(trimmedComment);
-    }
-
-    /**
-     * Parses a {@code Optional<String> comment} into an {@code Optional<Comment>} if {@code comment} is present.
-     * See header comment of this class regarding the use of {@code Comment} parameters.
-     */
-    public static Optional<Comment> parseComment(Optional<String> comment) throws IllegalValueException {
-        requireNonNull(comment);
-        return comment.isPresent() ? Optional.of(parseComment(comment.get())) : Optional.empty();
-    }
-}
-```
-###### /java/seedu/address/logic/parser/InterviewCommandParser.java
-``` java
-/**
- * Parses input arguments and creates a new InterviewCommand object
- */
-public class InterviewCommandParser implements Parser<InterviewCommand> {
-
-    public static final String MESSAGE_DATETIME_PARSE_FAIL = "Failed to parse the date time from the string: %1$s";
-
-    /**
-     * Parses the given {@code String} of arguments in the context of the InterviewCommand
-     * and returns an InterviewCommand object for execution.
-     * @throws ParseException if the user input does not conform the expected format
-     */
-    public InterviewCommand parse(String args) throws ParseException {
-        try {
-            // Parse the arguments
-            String[] arguments = args.trim().split("\\s+", 2);
-            if (arguments.length != 2) {
-                throw new IllegalValueException("Invalid command, expected 2 arguments");
+            try {
+                cardPhoto.setImage(profileImage);
+            } catch (Exception e) {
+                logger.info("Failed to load image file");
             }
+        }
 
-            // Parse the index
-            Index index = ParserUtil.parseIndex(arguments[0]);
+        cardPersonName.setText(person.getName().fullName);
+        cardPersonUniversity.setText(person.getUniversity().value);
+        cardPersonEmail.setText(person.getEmail().value);
+        cardPersonContact.setText(person.getPhone().value);
+        cardPersonStatus.setText(person.getStatus().value);
+        cardPersonStatus.setStyle("-fx-background-color: " + UiUtil.colorToHex(person.getStatus().color));
+        cardPersonNumber.setText(String.valueOf(index + 1));
 
-            // Parse the date time
-            LocalDateTime dateTime = parseDateFromNaturalLanguage(arguments[1]);
-
-            return new InterviewCommand(index, dateTime);
-
-        } catch (ParseException pe) {
-            throw pe;
-
-        } catch (IllegalValueException ive) {
-            throw new ParseException(
-                    String.format(MESSAGE_INVALID_COMMAND_FORMAT, InterviewCommand.MESSAGE_USAGE));
+        double rating = person.getRating().overallScore;
+        if (rating < 1e-3) {
+            cardPersonRating.setText("");
+            iconRating.setVisible(false);
+        } else {
+            cardPersonRating.setText(UiUtil.toFixed(rating, 2));
+            iconRating.setVisible(true);
         }
     }
 
     /**
-     * Parses the given natural language {@code String} and returns a {@code LocalDateTime} object
-     * that represents the English representation of the date and time
-     * @throws ParseException if the phrase cannot be converted to date and time
+     * Resize the photo to cover the ImageView
      */
-    private LocalDateTime parseDateFromNaturalLanguage(String naturalLanguage) throws ParseException {
-        com.joestelmach.natty.Parser parser = new com.joestelmach.natty.Parser();
+    private void resizePhoto() {
+        cardPhoto.setFitWidth(cardPhotoMask.getWidth());
+        cardPhoto.setFitHeight(cardPhotoMask.getHeight());
+        Image image = cardPhoto.getImage();
 
-        List<DateGroup> groups = parser.parse(naturalLanguage);
-        if (groups.size() < 1) {
-            throw new ParseException(String.format(MESSAGE_DATETIME_PARSE_FAIL, naturalLanguage));
+        if (image != null) {
+            double aspectRatio = cardPhotoMask.getWidth() / cardPhotoMask.getHeight();
+            double imageWidth = image.getWidth();
+            double imageHeight = image.getHeight();
+            double fitSize = Math.min(imageWidth, imageHeight);
+            double actualSize = fitSize * aspectRatio;
+
+            if (imageWidth > imageHeight) {
+                double x = (imageWidth - actualSize) / 2.0;
+                cardPhoto.setViewport(new Rectangle2D(x, 0, actualSize, fitSize));
+            } else {
+                double y = (imageHeight - actualSize) / 2.0;
+                cardPhoto.setViewport(new Rectangle2D(0, y, fitSize, actualSize));
+            }
         }
+    }
 
-        List<Date> dates = groups.get(0).getDates();
-        if (dates.size() < 1) {
-            throw new ParseException(String.format(MESSAGE_DATETIME_PARSE_FAIL, naturalLanguage));
+    @Subscribe
+    private void handlePersonChangedEvent(PersonChangedEvent event) {
+        ListChangeListener.Change<? extends Person> changes = event.getPersonChanged();
+        if (person != null) {
+            while (changes.next()) {
+                for (int i = changes.getFrom(); i < changes.getTo(); i++) {
+                    if (i == index) {
+                        person = changes.getList().get(i);
+                        updatePersonCard();
+                    }
+                }
+            }
         }
+    }
+```
+###### /java/seedu/address/ui/TitleBar.java
+``` java
+    /**
+     * Opens the help window.
+     */
+    @FXML
+    public void handleHelp(MouseEvent event) {
+        if (MouseButton.PRIMARY.equals(event.getButton())) {
+            HelpWindow helpWindow = new HelpWindow();
+            helpWindow.show();
+        }
+    }
 
-        Date date = dates.get(0);
-        return LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
+    /**
+     * Minimizes the application.
+     */
+    @FXML
+    private void handleMinimize(MouseEvent event) {
+        if (MouseButton.PRIMARY.equals(event.getButton())) {
+            raise(new MinimizeAppRequestEvent());
+        }
+    }
+
+    /**
+     * Maximizes the application.
+     */
+    @FXML
+    private void handleMaximize(MouseEvent event) {
+        if (MouseButton.PRIMARY.equals(event.getButton())) {
+            raise(new MaximizeAppRequestEvent());
+        }
+    }
+
+    /**
+     * Closes the application.
+     */
+    @FXML
+    private void handleExit(MouseEvent event) {
+        if (MouseButton.PRIMARY.equals(event.getButton())) {
+            raise(new ExitAppRequestEvent());
+        }
+    }
+
+    @Subscribe
+    private void handleShowHelpEvent(ShowHelpRequestEvent event) {
+        logger.info(LogsCenter.getEventHandlingLogMessage(event));
+        HelpWindow helpWindow = new HelpWindow();
+        helpWindow.show();
+    }
+
+    @Subscribe
+    public void handleAddressBookChangedEvent(AddressBookChangedEvent abce) {
+        long now = clock.millis();
+        String lastUpdated = new Date(now).toString();
+        logger.info(LogsCenter.getEventHandlingLogMessage(abce, "Setting last updated status to " + lastUpdated));
+        setSyncStatus(String.format(SYNC_STATUS_UPDATED, lastUpdated));
     }
 }
 ```
-###### /java/seedu/address/logic/parser/EditCommandParser.java
+###### /java/seedu/address/ui/UiResizer.java
 ``` java
+/**
+ * Ui Resizer, a utility to manage resize event of Stage such as resizable window
+ */
+public class UiResizer {
+
+    private Stage stage;
+
+    private double lastX;
+    private double lastY;
+    private double lastWidth;
+    private double lastHeight;
+
+    public UiResizer(Stage stage, GuiSettings guiSettings, double minWidth, double minHeight, int cornerSize) {
+        this.stage = stage;
+
+        // Set listeners
+        ResizeListener resizeListener = new ResizeListener(stage, minWidth, minHeight, cornerSize);
+        stage.getScene().addEventHandler(MouseEvent.MOUSE_MOVED, resizeListener);
+        stage.getScene().addEventHandler(MouseEvent.MOUSE_PRESSED, resizeListener);
+        stage.getScene().addEventHandler(MouseEvent.MOUSE_DRAGGED, resizeListener);
+        stage.getScene().addEventHandler(MouseEvent.MOUSE_RELEASED, resizeListener);
+
+        // Set last value
+        lastX = guiSettings.getWindowCoordinates().x;
+        lastY = guiSettings.getWindowCoordinates().y;
+        lastWidth = guiSettings.getWindowWidth();
+        lastHeight = guiSettings.getWindowHeight();
+    }
+
+    private Rectangle2D getScreenBound() {
+        return Screen.getPrimary().getVisualBounds();
+    }
+
     /**
-     * Parses {@code Optional<ProfileImage> profileImage} into a {@code Optional<ProfileImage>}
-     * if {@code profileImage} is non-empty.
-     * If profile image is present and equals to empty string, it will be parsed into a
-     * {@code ProfileImage} containing null value.
+     * Maximize / Un-maximize the stage, polyfill for native {@link Stage#setMaximized} feature
      */
-    private Optional<ProfileImage> parseProfileImageForEdit(Optional<String> profileImage)
-            throws IllegalValueException {
-        assert profileImage != null;
-        if (!profileImage.isPresent()) {
-            return Optional.empty();
-        }
-        if (profileImage.get().equals("")) {
-            return Optional.of(new ProfileImage(null));
+    public void toggleMaximize() {
+        Rectangle2D screenBound = getScreenBound();
+        double stageX = stage.getX();
+        double stageY = stage.getY();
+        double stageWidth = stage.getWidth();
+        double stageHeight = stage.getHeight();
+
+        if (stageWidth == screenBound.getWidth() && stageHeight == screenBound.getHeight()) {
+            stage.setX(lastX);
+            stage.setY(lastY);
+            stage.setWidth(lastWidth);
+            stage.setHeight(lastHeight);
         } else {
-            return ParserUtil.parseProfileImage(profileImage);
+            lastX = stageX;
+            lastY = stageY;
+            lastWidth = stageWidth;
+            lastHeight = stageHeight;
+            stage.setX(screenBound.getMinX());
+            stage.setY(screenBound.getMinY());
+            stage.setWidth(screenBound.getWidth());
+            stage.setHeight(screenBound.getHeight());
         }
     }
 
     /**
-     * Parses {@code Optional<Comment> comment} into a {@code Optional<Comment>} if {@code comment} is non-empty.
+     * Manage the resize event during mouse move and drag
      */
-    private Optional<Comment> parseCommentForEdit(Optional<String> comment) throws IllegalValueException {
-        assert comment != null;
-        if (!comment.isPresent()) {
-            return Optional.empty();
+    static class ResizeListener implements EventHandler<MouseEvent> {
+        private Stage stage;
+
+        private boolean holding = false;
+        private int cornerSize;
+
+        // Starting position of resizing
+        private double startX = 0;
+        private double startY = 0;
+
+        // Min sizes for stage
+        private double minWidth;
+        private double minHeight;
+
+        public ResizeListener(Stage stage, double minWidth, double minHeight, int borderSize) {
+            this.stage = stage;
+            this.minWidth = minWidth;
+            this.minHeight = minHeight;
+            this.cornerSize = borderSize;
         }
-        if (comment.get().equals("")) {
-            return Optional.of(new Comment(null));
-        } else {
-            return ParserUtil.parseComment(comment);
+
+        @Override
+        public void handle(MouseEvent mouseEvent) {
+            String eventType = mouseEvent.getEventType().getName();
+            Scene scene = stage.getScene();
+
+            double mouseX = mouseEvent.getSceneX();
+            double mouseY = mouseEvent.getSceneY();
+
+
+            switch (eventType) {
+
+            case "MOUSE_MOVED":
+                scene.setCursor((isResizePosition(mouseX, mouseY) || holding) ? Cursor.SE_RESIZE : Cursor.DEFAULT);
+                break;
+
+            case "MOUSE_RELEASED":
+                holding = false;
+                scene.setCursor(Cursor.DEFAULT);
+                break;
+
+            case "MOUSE_PRESSED":
+                // Left click only
+                if (MouseButton.PRIMARY.equals(mouseEvent.getButton())) {
+                    holding = isResizePosition(mouseX, mouseY);
+                    startX = stage.getWidth() - mouseX;
+                    startY = stage.getHeight() - mouseY;
+                }
+                break;
+
+            case "MOUSE_DRAGGED":
+                if (holding) {
+                    setStageWidth(mouseX + startX);
+                    setStageHeight(mouseY + startY);
+                }
+                break;
+
+            default:
+
+            }
         }
+
+        /**
+         * Check if the X and Y coordinate of the mouse are in the range of draggable position
+         *
+         * @param x coordinate of the {@code MouseEvent}
+         * @param y coordinate of the {@code MouseEvent}
+         * @return {@code true} if the coordinate is in the range of draggable position, {@code false} otherwise
+         */
+        private boolean isResizePosition(double x, double y) {
+            Scene scene = stage.getScene();
+            return (x > scene.getWidth() - cornerSize && y > scene.getHeight() - cornerSize);
+        }
+
+        /**
+         * Set the width of the stage, with validation to be larger than {@code minWidth}
+         *
+         * @param width of the stage
+         */
+        private void setStageWidth(double width) {
+            stage.setWidth(Math.max(width, minWidth));
+        }
+
+        /**
+         * Set the height of the stage, with validation to be larger than {@code minHeight}
+         *
+         * @param height of the stage
+         */
+        private void setStageHeight(double height) {
+            stage.setHeight(Math.max(height, minHeight));
+        }
+
     }
+}
 ```
-###### /resources/view/InfoPanel.fxml
+###### /resources/view/CommandBox.fxml
 ``` fxml
-<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="infoPaneWrapper" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-    <ScrollPane fx:id="infoMainPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" focusTraversable="true" />
-    <SplitPane fx:id="infoSplitPane" dividerPositions="0.5" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <ScrollPane fx:id="infoSplitMainPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" focusTraversable="true">
-            <VBox fx:id="infoMain">
-                <AnchorPane fx:id="infoMainTop">
-                    <VBox fx:id="infoMainTopLeft" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                        <Label fx:id="infoMainName"></Label>
-                        <Label fx:id="infoMainUniversity">
-                            <VBox.margin>
-                                <Insets bottom="-2.0" />
-                            </VBox.margin>
-                        </Label>
-                        <Label fx:id="infoMainMajorYear">
-                        </Label>
-                        <padding>
-                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                        </padding>
-                    </VBox>
-                    <HBox fx:id="infoMainTopRight" alignment="CENTER_RIGHT" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                        <Label fx:id="infoMainCgpaLabel" text="cGPA">
-                            <HBox.margin>
-                                <Insets right="5.0" />
-                            </HBox.margin>
-                        </Label>
-                        <Label fx:id="infoMainCgpa" alignment="CENTER" maxHeight="36.0" maxWidth="36.0" minHeight="36.0" minWidth="36.0" prefHeight="36.0" prefWidth="36.0">
-                        </Label>
-                    </HBox>
-                    <VBox.margin>
-                        <Insets bottom="10.0" />
-                    </VBox.margin>
-                </AnchorPane>
-                <VBox fx:id="infoMainContact">
-                    <HBox fx:id="infoMainContactEmailPane" alignment="CENTER_LEFT">
-                        <VBox fx:id="iconEmailOuter" alignment="CENTER" maxHeight="15.0" maxWidth="15.0" minHeight="15.0" minWidth="15.0" prefHeight="15.0" prefWidth="15.0">
-                            <Pane fx:id="iconEmail" styleClass="icon-email" maxHeight="11.4" maxWidth="15.0" minHeight="11.4" minWidth="15.0" prefHeight="11.4" prefWidth="15.0"/>
-                            <HBox.margin>
-                                <Insets right="5.0" />
-                            </HBox.margin>
-                        </VBox>
-                        <Label fx:id="infoMainEmail"></Label>
-                        <VBox.margin>
-                            <Insets bottom="6.0" />
-                        </VBox.margin>
-                    </HBox>
-                    <HBox fx:id="infoMainContactAddressPane" alignment="CENTER_LEFT">
-                        <VBox fx:id="iconAddressOuter" alignment="CENTER" maxHeight="15.0" maxWidth="15.0" minHeight="15.0" minWidth="15.0" prefHeight="15.0" prefWidth="15.0">
-                            <Pane fx:id="iconAddress" styleClass="icon-address" maxHeight="15.0" maxWidth="9.33" minHeight="15.0" minWidth="9.33" prefHeight="15.0" prefWidth="9.33"/>
-                            <HBox.margin>
-                                <Insets right="5.0" />
-                            </HBox.margin>
-                        </VBox>
-                        <Label fx:id="infoMainAddress"></Label>
-                        <VBox.margin>
-                            <Insets bottom="6.0" />
-                        </VBox.margin>
-                    </HBox>
-                    <HBox fx:id="infoMainContactPhonePane" alignment="CENTER_LEFT">
-                        <VBox fx:id="iconPhoneOuter" alignment="CENTER" maxHeight="15.0" maxWidth="15.0" minHeight="15.0" minWidth="15.0" prefHeight="15.0" prefWidth="15.0">
-                            <Pane fx:id="iconPhone" styleClass="icon-phone" maxHeight="15.0" maxWidth="15.0" minHeight="15.0" minWidth="15.0" prefHeight="15.0" prefWidth="15.0"/>
-                            <HBox.margin>
-                                <Insets right="5.0" />
-                            </HBox.margin>
-                        </VBox>
-                        <Label fx:id="infoMainPhone"></Label>
-                    </HBox>
-                    <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                    </padding>
-                    <VBox.margin>
-                        <Insets bottom="5.0" />
-                    </VBox.margin>
-                </VBox>
-                <HBox fx:id="infoMainInterview">
-                    <GridPane fx:id="infoMainInterviewDetails" alignment="CENTER" HBox.hgrow="ALWAYS">
-                        <columnConstraints>
-                            <ColumnConstraints fillWidth="false" hgrow="NEVER" />
-                            <ColumnConstraints hgrow="ALWAYS" />
-                        </columnConstraints>
-                        <rowConstraints>
-                            <RowConstraints fillHeight="false" vgrow="NEVER" />
-                            <RowConstraints fillHeight="false" vgrow="NEVER" />
-                        </rowConstraints>
-                        <Label fx:id="infoMainPositionLabel" minWidth="-Infinity" text="Position">
-                            <GridPane.margin>
-                                <Insets right="5.0" />
-                            </GridPane.margin>
-                        </Label>
-                        <Label fx:id="infoMainStatusLabel" minWidth="-Infinity" text="Status" GridPane.rowIndex="1">
-                            <GridPane.margin>
-                                <Insets right="5.0" />
-                            </GridPane.margin>
-                        </Label>
-                        <Label fx:id="infoMainPosition" GridPane.columnIndex="1"></Label>
-                        <Label fx:id="infoMainStatus" GridPane.columnIndex="1" GridPane.rowIndex="1"></Label>
-                        <padding>
-                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                        </padding>
-                    </GridPane>
-                    <VBox fx:id="infoMainInterviewDatePane" alignment="CENTER" minWidth="-Infinity">
-                        <VBox fx:id="infoMainInterviewDateCalendar" minWidth="65.0">
-                            <Label fx:id="infoMainInterviewMonth" alignment="CENTER" maxWidth="Infinity" VBox.vgrow="ALWAYS">
-                                <VBox.margin>
-                                    <Insets />
-                                </VBox.margin>
-                                <padding>
-                                    <Insets bottom="2.0" left="8.0" right="8.0" top="2.0" />
-                                </padding>
-                            </Label>
-                            <Label fx:id="infoMainInterviewDate" alignment="CENTER" maxWidth="Infinity">
-                                <VBox.margin>
-                                    <Insets bottom="-5.0" />
-                                </VBox.margin>
-                            </Label>
-                            <Label fx:id="infoMainInterviewDay" alignment="CENTER" maxWidth="Infinity">
-                                <VBox.margin>
-                                    <Insets />
-                                </VBox.margin>
-                            </Label>
-                            <padding>
-                                <Insets bottom="8.0" />
-                            </padding>
-                            <VBox.margin>
-                                <Insets bottom="3.0" />
-                            </VBox.margin>
-                        </VBox>
-                        <Label fx:id="infoMainInterviewTime" alignment="CENTER" maxWidth="Infinity"></Label>
-                    </VBox>
-                </HBox>
-                <VBox fx:id="infoMainCommentsPane">
-                    <Label fx:id="infoMainCommentsLabel" text="Comments">
-                        <VBox.margin>
-                            <Insets bottom="5.0" left="5.0" />
-                        </VBox.margin>
-                    </Label>
-                    <Label fx:id="infoMainComments" alignment="TOP_LEFT" maxWidth="Infinity" minHeight="60.0" wrapText="true">
-                        <padding>
-                            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                        </padding>
-                    </Label>
-                    <VBox.margin>
-                        <Insets bottom="20.0" />
-                    </VBox.margin>
-                </VBox>
-                <AnchorPane fx:id="infoMainRatings" />
-                <padding>
-                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                </padding>
-            </VBox>
-        </ScrollPane>
-        <AnchorPane fx:id="infoSplitSidePane" maxWidth="300.0" minWidth="250.0">
-            <padding>
-                <Insets left="16.0" right="8.0" top="8.0" />
-            </padding>
-            <VBox fx:id="infoSplitRatings" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                <VBox fx:id="infoSplitSide" alignment="TOP_CENTER">
-                    <Pane fx:id="infoSideGraph" maxHeight="150.0" minHeight="150.0" prefHeight="150.0"/>
-                    <GridPane fx:id="infoSideRatingDetails">
-                        <columnConstraints>
-                            <ColumnConstraints hgrow="NEVER" />
-                            <ColumnConstraints hgrow="ALWAYS" />
-                        </columnConstraints>
-                        <rowConstraints>
-                            <RowConstraints vgrow="NEVER" />
-                            <RowConstraints vgrow="NEVER" />
-                            <RowConstraints vgrow="NEVER" />
-                            <RowConstraints vgrow="NEVER" />
-                        </rowConstraints>
-                        <Label fx:id="infoRatingTechnicalLabel" text="Technical" GridPane.halignment="RIGHT">
-                            <GridPane.margin>
-                                <Insets right="5.0" />
-                            </GridPane.margin>
-                            <padding>
-                                <Insets bottom="5.0" />
-                            </padding>
-                        </Label>
-                        <ProgressBar fx:id="infoRatingTechnical" styleClass="hr-progress-bar" focusTraversable="false" maxWidth="Infinity" progress="0.0" GridPane.columnIndex="1" />
-                        <Label fx:id="infoRatingCommunicationLabel" text="Communication" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
-                            <GridPane.margin>
-                                <Insets right="5.0" />
-                            </GridPane.margin>
-                            <padding>
-                                <Insets bottom="5.0" />
-                            </padding>
-                        </Label>
-                        <ProgressBar fx:id="infoRatingCommunication" styleClass="hr-progress-bar" focusTraversable="false" maxWidth="Infinity" progress="0.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                        <Label fx:id="infoRatingProblemSolvingLabel" text="Problem Solving" GridPane.halignment="RIGHT" GridPane.rowIndex="2">
-                            <GridPane.margin>
-                                <Insets right="5.0" />
-                            </GridPane.margin>
-                            <padding>
-                                <Insets bottom="5.0" />
-                            </padding>
-                        </Label>
-                        <ProgressBar fx:id="infoRatingProblemSolving" styleClass="hr-progress-bar" focusTraversable="false" maxWidth="Infinity" progress="0.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                        <Label fx:id="infoRatingExperienceLabel" text="Experience" GridPane.halignment="RIGHT" GridPane.rowIndex="3">
-                            <GridPane.margin>
-                                <Insets right="5.0" />
-                            </GridPane.margin>
-                        </Label>
-                        <ProgressBar fx:id="infoRatingExperience" styleClass="hr-progress-bar" focusTraversable="false" maxWidth="Infinity" progress="0.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                        <padding>
-                            <Insets bottom="8.0" top="8.0" />
-                        </padding>
-                    </GridPane>
-                </VBox>
-                <VBox fx:id="infoSideButtons" alignment="BOTTOM_CENTER" VBox.vgrow="ALWAYS">
-                    <Button fx:id="infoSideButtonResume" onAction="#showResume" maxWidth="Infinity" mnemonicParsing="false" text="View Resume">
-                        <padding>
-                            <Insets bottom="6.0" left="8.0" right="8.0" top="6.0" />
-                        </padding>
-                    </Button>
-                    <padding>
-                        <Insets bottom="10.0" left="2.0" right="2.0" top="10.0" />
-                    </padding>
-                </VBox>
-            </VBox>
-        </AnchorPane>
-    </SplitPane>
-</AnchorPane>
-```
-###### /resources/view/TitleBar.fxml
-``` fxml
-<HBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="topTitle" alignment="CENTER_RIGHT" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-    <Label fx:id="topStatusMessage" maxWidth="Infinity" HBox.hgrow="SOMETIMES"/>
-    <Label fx:id="topStatusFile" HBox.hgrow="SOMETIMES"/>
-    <HBox fx:id="topControl" minWidth="-Infinity">
-        <Pane fx:id="controlHelp" onMouseClicked="#handleHelp" layoutX="21.0" layoutY="21.0" maxHeight="18.0" maxWidth="18.0" minHeight="18.0" minWidth="18.0" prefHeight="18.0" prefWidth="18.0" HBox.hgrow="NEVER">
-            <Pane fx:id="controlHelpInner" styleClass="icon-help" layoutX="3.29" maxHeight="18.0" maxWidth="11.42" minHeight="18.0" minWidth="11.42" prefHeight="18.0" prefWidth="11.42" />
-            <HBox.margin>
-                <Insets right="20.0" />
-            </HBox.margin>
-        </Pane>
-        <Pane fx:id="controlMinimize" onMouseClicked="#handleMinimize" maxHeight="18.0" maxWidth="18.0" minHeight="18.0" minWidth="18.0" prefHeight="18.0" prefWidth="18.0" HBox.hgrow="NEVER">
-            <HBox.margin>
-                <Insets right="10.0" />
-            </HBox.margin>
-            <Pane fx:id="controlMinimizeInner" layoutY="16.2" maxHeight="1.8" maxWidth="18.0" minHeight="1.8" minWidth="18.0" prefHeight="1.8" prefWidth="18.0" />
-        </Pane>
-        <Pane fx:id="controlMaximize" styleClass="icon-expand" onMouseClicked="#handleMaximize" maxHeight="18.0" maxWidth="18.0" minHeight="18.0" minWidth="18.0" prefHeight="18.0" prefWidth="18.0" HBox.hgrow="NEVER">
-            <HBox.margin>
-                <Insets right="10.0" />
-            </HBox.margin>
-        </Pane>
-        <Pane fx:id="controlClose" styleClass="icon-close" onMouseClicked="#handleExit" maxHeight="18.0" maxWidth="18.0" minHeight="18.0" minWidth="18.0" prefHeight="18.0" prefWidth="18.0" HBox.hgrow="NEVER" />
-        <padding>
-            <Insets bottom="11.0" left="11.0" right="11.0" top="11.0" />
-        </padding>
-    </HBox>
-</HBox>
-```
-###### /resources/view/MainWindow.fxml
-``` fxml
-<fx:root type="javafx.stage.Stage" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" minWidth="800" minHeight="600">
-    <scene>
-        <Scene>
-            <stylesheets>
-                <URL value="@HRTheme.css"/>
-            </stylesheets>
-            <AnchorPane fx:id="mainWindow">
-                <AnchorPane fx:id="topPane" maxHeight="80.0" minHeight="80.0" prefHeight="80.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                    <AnchorPane fx:id="logoTop" styleClass="logo-hr" maxWidth="75.0" minWidth="75.0" prefWidth="75.0" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="30.0" AnchorPane.topAnchor="15.0" />
-                    <AnchorPane fx:id="topTitlePlaceholder" AnchorPane.bottomAnchor="40.0" AnchorPane.leftAnchor="160.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
-                    <AnchorPane fx:id="topDownPane" maxHeight="40.0" minHeight="40.0" prefHeight="40.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="120.0" AnchorPane.rightAnchor="0.0">
-                        <AnchorPane fx:id="styleTopPane" styleClass="style-lower-triangle" maxWidth="40.0" minWidth="40.0" prefWidth="40.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
-                        <AnchorPane fx:id="topCommandPlaceholder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
-                    </AnchorPane>
-                </AnchorPane>
-                <AnchorPane fx:id="bottomWrapper" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="80.0">
-                    <AnchorPane fx:id="centerPanePlaceholder" maxHeight="95.0" minHeight="95.0" prefHeight="95.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
-                    <AnchorPane fx:id="bottomPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="95.0">
-                        <SplitPane fx:id="bottomPaneSplit" dividerPositions="0.5" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                            <AnchorPane fx:id="bottomListPane" minWidth="300.0" prefWidth="300.0">
-                                <AnchorPane fx:id="listPersonsPlaceholder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
-                            </AnchorPane>
-                            <AnchorPane fx:id="bottomInfoPane" minWidth="400.0">
-                                <VBox fx:id="welcomePane" alignment="CENTER" fillWidth="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                    <Label fx:id="welcomeTitle" text="Welcome to HR+"/>
-                                    <Pane fx:id="logoWelcome" styleClass="logo-hr" maxWidth="-Infinity" prefHeight="80.0" prefWidth="120.0" VBox.vgrow="NEVER">
-                                        <VBox.margin>
-                                            <Insets bottom="15.0" left="10.0" top="15.0" />
-                                        </VBox.margin>
-                                    </Pane>
-                                    <Label fx:id="welcomeMadeWith" text="Made with love by"/>
-                                    <Label fx:id="welcomeName" text="Yee Chin, Hong Qiang, Xiao Wen, Heng Yeow"/>
-                                </VBox>
-                                <AnchorPane fx:id="resumePanePlaceholder" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-                                <AnchorPane fx:id="infoPanePlaceholder" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
-                            </AnchorPane>
-                        </SplitPane>
-                        <padding>
-                            <Insets left="15.0" right="15.0" bottom="10.0" top="10.0"/>
-                        </padding>
-                    </AnchorPane>
-                </AnchorPane>
-            </AnchorPane>
-        </Scene>
-    </scene>
-</fx:root>
-```
-###### /resources/view/PdfPanel.fxml
-``` fxml
-<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="resumePaneOuter" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-    <AnchorPane fx:id="resumePaneWrapper" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <ScrollPane fx:id="resumePane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" focusTraversable="true">
-            <VBox fx:id="resumePanePages">
-                <padding>
-                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                </padding>
-            </VBox>
-        </ScrollPane>
-    </AnchorPane>
-
-    <Label fx:id="resumePageLabel" visible="false" AnchorPane.rightAnchor="16.0" AnchorPane.topAnchor="6.0">
-        <padding>
-            <Insets bottom="3.0" left="10.0" right="10.0" top="3.0" />
-        </padding>
-    </Label>
-
-    <VBox visible="false" fx:id="resumeLoading" alignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <Label fx:id="resumeLoadingLabel">
-            <VBox.margin>
-                <Insets bottom="5.0" />
-            </VBox.margin>
-        </Label>
-        <ProgressBar fx:id="resumeLoadingBar" styleClass="hr-progress-bar" maxWidth="Infinity" progress="0.5" />
-    </VBox>
-</AnchorPane>
-```
-###### /resources/view/PersonListPanel.fxml
-``` fxml
-<ListView xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="listPersons" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-```
-###### /resources/view/ResultDisplay.fxml
-``` fxml
-<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="centerPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="topCommand" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+    <TextField fx:id="commandInput" onAction="#handleCommandInputChanged" onKeyPressed="#handleKeyPress" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" promptText="Enter command here..." />
     <padding>
-        <Insets left="15.0" right="15.0" top="8.0" />
+        <Insets left="8.0" right="15.0" top="8.0" />
     </padding>
-    <TextArea fx:id="commandResult" editable="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
 </AnchorPane>
 ```
 ###### /resources/view/HRTheme.css
@@ -2572,6 +2271,307 @@ public class InterviewCommandParser implements Parser<InterviewCommand> {
     -fx-shape: "M106.5,0.3v181.5H86.2v-80.6H20.3v80.6H0V0.3h20.3v80.6h65.9V0.3H106.5z M124,2.1v21.4c5.3-2.2,11.1-3.4,17.2-3.4c25,0,45.3,20.3,45.3,45.3c0,6-1.2,11.8-3.3,17C180,84.8,175.3,87,169,87c-14.2,0-19.5-12-19.7-12.6c-0.7-1.8-2.8-2.7-4.6-1.9c-1.8,0.7-2.7,2.8-1.9,4.6c0.3,0.7,7.1,17,26.2,17c2.9,0,5.6-0.4,8-1c-8.3,10.6-21.2,17.5-35.7,17.5c-6.1,0-11.9-1.2-17.2-3.4v21.4c5.5,1.5,11.3,2.3,17.2,2.3c8,0,15.7-1.4,22.8-4.1c5.7,7.6,16.4,25.3,20.7,55.1h20.5c-4.2-33.1-15.6-54.2-23.4-65.2c15.2-12,25-30.6,25-51.4c0-33.9-25.9-61.9-58.9-65.2h-13.4C131,0.5,127.4,1.1,124,2.1z M164,59.5c-3.9,0-7.1-3.2-7.1-7.1c0-3.9,3.2-7.1,7.1-7.1s7.1,3.2,7.1,7.1C171.1,56.4,167.9,59.5,164,59.5z M256,112.3h-15.2V97.1h-15.2v15.2h-15.2v15.2h15.2v15.2h15.2v-15.2H256V112.3z";
 }
 ```
+###### /resources/view/InfoPanel.fxml
+``` fxml
+<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="infoPaneWrapper" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+    <ScrollPane fx:id="infoMainPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" focusTraversable="true" />
+    <SplitPane fx:id="infoSplitPane" dividerPositions="0.5" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <ScrollPane fx:id="infoSplitMainPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" focusTraversable="true">
+            <VBox fx:id="infoMain">
+                <AnchorPane fx:id="infoMainTop">
+                    <VBox fx:id="infoMainTopLeft" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <Label fx:id="infoMainName"></Label>
+                        <Label fx:id="infoMainUniversity">
+                            <VBox.margin>
+                                <Insets bottom="-2.0" />
+                            </VBox.margin>
+                        </Label>
+                        <Label fx:id="infoMainMajorYear">
+                        </Label>
+                        <padding>
+                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                        </padding>
+                    </VBox>
+                    <HBox fx:id="infoMainTopRight" alignment="CENTER_RIGHT" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <Label fx:id="infoMainCgpaLabel" text="cGPA">
+                            <HBox.margin>
+                                <Insets right="5.0" />
+                            </HBox.margin>
+                        </Label>
+                        <Label fx:id="infoMainCgpa" alignment="CENTER" maxHeight="36.0" maxWidth="36.0" minHeight="36.0" minWidth="36.0" prefHeight="36.0" prefWidth="36.0">
+                        </Label>
+                    </HBox>
+                    <VBox.margin>
+                        <Insets bottom="10.0" />
+                    </VBox.margin>
+                </AnchorPane>
+                <VBox fx:id="infoMainContact">
+                    <HBox fx:id="infoMainContactEmailPane" alignment="CENTER_LEFT">
+                        <VBox fx:id="iconEmailOuter" alignment="CENTER" maxHeight="15.0" maxWidth="15.0" minHeight="15.0" minWidth="15.0" prefHeight="15.0" prefWidth="15.0">
+                            <Pane fx:id="iconEmail" styleClass="icon-email" maxHeight="11.4" maxWidth="15.0" minHeight="11.4" minWidth="15.0" prefHeight="11.4" prefWidth="15.0"/>
+                            <HBox.margin>
+                                <Insets right="5.0" />
+                            </HBox.margin>
+                        </VBox>
+                        <Label fx:id="infoMainEmail"></Label>
+                        <VBox.margin>
+                            <Insets bottom="6.0" />
+                        </VBox.margin>
+                    </HBox>
+                    <HBox fx:id="infoMainContactAddressPane" alignment="CENTER_LEFT">
+                        <VBox fx:id="iconAddressOuter" alignment="CENTER" maxHeight="15.0" maxWidth="15.0" minHeight="15.0" minWidth="15.0" prefHeight="15.0" prefWidth="15.0">
+                            <Pane fx:id="iconAddress" styleClass="icon-address" maxHeight="15.0" maxWidth="9.33" minHeight="15.0" minWidth="9.33" prefHeight="15.0" prefWidth="9.33"/>
+                            <HBox.margin>
+                                <Insets right="5.0" />
+                            </HBox.margin>
+                        </VBox>
+                        <Label fx:id="infoMainAddress"></Label>
+                        <VBox.margin>
+                            <Insets bottom="6.0" />
+                        </VBox.margin>
+                    </HBox>
+                    <HBox fx:id="infoMainContactPhonePane" alignment="CENTER_LEFT">
+                        <VBox fx:id="iconPhoneOuter" alignment="CENTER" maxHeight="15.0" maxWidth="15.0" minHeight="15.0" minWidth="15.0" prefHeight="15.0" prefWidth="15.0">
+                            <Pane fx:id="iconPhone" styleClass="icon-phone" maxHeight="15.0" maxWidth="15.0" minHeight="15.0" minWidth="15.0" prefHeight="15.0" prefWidth="15.0"/>
+                            <HBox.margin>
+                                <Insets right="5.0" />
+                            </HBox.margin>
+                        </VBox>
+                        <Label fx:id="infoMainPhone"></Label>
+                    </HBox>
+                    <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                    </padding>
+                    <VBox.margin>
+                        <Insets bottom="5.0" />
+                    </VBox.margin>
+                </VBox>
+                <HBox fx:id="infoMainInterview">
+                    <GridPane fx:id="infoMainInterviewDetails" alignment="CENTER" HBox.hgrow="ALWAYS">
+                        <columnConstraints>
+                            <ColumnConstraints fillWidth="false" hgrow="NEVER" />
+                            <ColumnConstraints hgrow="ALWAYS" />
+                        </columnConstraints>
+                        <rowConstraints>
+                            <RowConstraints fillHeight="false" vgrow="NEVER" />
+                            <RowConstraints fillHeight="false" vgrow="NEVER" />
+                        </rowConstraints>
+                        <Label fx:id="infoMainPositionLabel" minWidth="-Infinity" text="Position">
+                            <GridPane.margin>
+                                <Insets right="5.0" />
+                            </GridPane.margin>
+                        </Label>
+                        <Label fx:id="infoMainStatusLabel" minWidth="-Infinity" text="Status" GridPane.rowIndex="1">
+                            <GridPane.margin>
+                                <Insets right="5.0" />
+                            </GridPane.margin>
+                        </Label>
+                        <Label fx:id="infoMainPosition" GridPane.columnIndex="1"></Label>
+                        <Label fx:id="infoMainStatus" GridPane.columnIndex="1" GridPane.rowIndex="1"></Label>
+                        <padding>
+                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                        </padding>
+                    </GridPane>
+                    <VBox fx:id="infoMainInterviewDatePane" alignment="CENTER" minWidth="-Infinity">
+                        <VBox fx:id="infoMainInterviewDateCalendar" minWidth="65.0">
+                            <Label fx:id="infoMainInterviewMonth" alignment="CENTER" maxWidth="Infinity" VBox.vgrow="ALWAYS">
+                                <VBox.margin>
+                                    <Insets />
+                                </VBox.margin>
+                                <padding>
+                                    <Insets bottom="2.0" left="8.0" right="8.0" top="2.0" />
+                                </padding>
+                            </Label>
+                            <Label fx:id="infoMainInterviewDate" alignment="CENTER" maxWidth="Infinity">
+                                <VBox.margin>
+                                    <Insets bottom="-5.0" />
+                                </VBox.margin>
+                            </Label>
+                            <Label fx:id="infoMainInterviewDay" alignment="CENTER" maxWidth="Infinity">
+                                <VBox.margin>
+                                    <Insets />
+                                </VBox.margin>
+                            </Label>
+                            <padding>
+                                <Insets bottom="8.0" />
+                            </padding>
+                            <VBox.margin>
+                                <Insets bottom="3.0" />
+                            </VBox.margin>
+                        </VBox>
+                        <Label fx:id="infoMainInterviewTime" alignment="CENTER" maxWidth="Infinity"></Label>
+                    </VBox>
+                </HBox>
+                <VBox fx:id="infoMainCommentsPane">
+                    <Label fx:id="infoMainCommentsLabel" text="Comments">
+                        <VBox.margin>
+                            <Insets bottom="5.0" left="5.0" />
+                        </VBox.margin>
+                    </Label>
+                    <Label fx:id="infoMainComments" alignment="TOP_LEFT" maxWidth="Infinity" minHeight="60.0" wrapText="true">
+                        <padding>
+                            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                        </padding>
+                    </Label>
+                    <VBox.margin>
+                        <Insets bottom="20.0" />
+                    </VBox.margin>
+                </VBox>
+                <AnchorPane fx:id="infoMainRatings" />
+                <padding>
+                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                </padding>
+            </VBox>
+        </ScrollPane>
+        <AnchorPane fx:id="infoSplitSidePane" maxWidth="300.0" minWidth="250.0">
+            <padding>
+                <Insets left="16.0" right="8.0" top="8.0" />
+            </padding>
+            <VBox fx:id="infoSplitRatings" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <VBox fx:id="infoSplitSide" alignment="TOP_CENTER">
+                    <Pane fx:id="infoSideGraph" maxHeight="150.0" minHeight="150.0" prefHeight="150.0"/>
+                    <GridPane fx:id="infoSideRatingDetails">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="NEVER" />
+                            <ColumnConstraints hgrow="ALWAYS" />
+                        </columnConstraints>
+                        <rowConstraints>
+                            <RowConstraints vgrow="NEVER" />
+                            <RowConstraints vgrow="NEVER" />
+                            <RowConstraints vgrow="NEVER" />
+                            <RowConstraints vgrow="NEVER" />
+                        </rowConstraints>
+                        <Label fx:id="infoRatingTechnicalLabel" text="Technical" GridPane.halignment="RIGHT">
+                            <GridPane.margin>
+                                <Insets right="5.0" />
+                            </GridPane.margin>
+                            <padding>
+                                <Insets bottom="5.0" />
+                            </padding>
+                        </Label>
+                        <ProgressBar fx:id="infoRatingTechnical" styleClass="hr-progress-bar" focusTraversable="false" maxWidth="Infinity" progress="0.0" GridPane.columnIndex="1" />
+                        <Label fx:id="infoRatingCommunicationLabel" text="Communication" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
+                            <GridPane.margin>
+                                <Insets right="5.0" />
+                            </GridPane.margin>
+                            <padding>
+                                <Insets bottom="5.0" />
+                            </padding>
+                        </Label>
+                        <ProgressBar fx:id="infoRatingCommunication" styleClass="hr-progress-bar" focusTraversable="false" maxWidth="Infinity" progress="0.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <Label fx:id="infoRatingProblemSolvingLabel" text="Problem Solving" GridPane.halignment="RIGHT" GridPane.rowIndex="2">
+                            <GridPane.margin>
+                                <Insets right="5.0" />
+                            </GridPane.margin>
+                            <padding>
+                                <Insets bottom="5.0" />
+                            </padding>
+                        </Label>
+                        <ProgressBar fx:id="infoRatingProblemSolving" styleClass="hr-progress-bar" focusTraversable="false" maxWidth="Infinity" progress="0.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                        <Label fx:id="infoRatingExperienceLabel" text="Experience" GridPane.halignment="RIGHT" GridPane.rowIndex="3">
+                            <GridPane.margin>
+                                <Insets right="5.0" />
+                            </GridPane.margin>
+                        </Label>
+                        <ProgressBar fx:id="infoRatingExperience" styleClass="hr-progress-bar" focusTraversable="false" maxWidth="Infinity" progress="0.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                        <padding>
+                            <Insets bottom="8.0" top="8.0" />
+                        </padding>
+                    </GridPane>
+                </VBox>
+                <VBox fx:id="infoSideButtons" alignment="BOTTOM_CENTER" VBox.vgrow="ALWAYS">
+                    <Button fx:id="infoSideButtonResume" onAction="#showResume" maxWidth="Infinity" mnemonicParsing="false" text="View Resume">
+                        <padding>
+                            <Insets bottom="6.0" left="8.0" right="8.0" top="6.0" />
+                        </padding>
+                    </Button>
+                    <padding>
+                        <Insets bottom="10.0" left="2.0" right="2.0" top="10.0" />
+                    </padding>
+                </VBox>
+            </VBox>
+        </AnchorPane>
+    </SplitPane>
+</AnchorPane>
+```
+###### /resources/view/MainWindow.fxml
+``` fxml
+<fx:root type="javafx.stage.Stage" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" minWidth="800" minHeight="600">
+    <scene>
+        <Scene>
+            <stylesheets>
+                <URL value="@HRTheme.css"/>
+            </stylesheets>
+            <AnchorPane fx:id="mainWindow">
+                <AnchorPane fx:id="topPane" maxHeight="80.0" minHeight="80.0" prefHeight="80.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <AnchorPane fx:id="logoTop" styleClass="logo-hr" maxWidth="75.0" minWidth="75.0" prefWidth="75.0" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="30.0" AnchorPane.topAnchor="15.0" />
+                    <AnchorPane fx:id="topTitlePlaceholder" AnchorPane.bottomAnchor="40.0" AnchorPane.leftAnchor="160.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                    <AnchorPane fx:id="topDownPane" maxHeight="40.0" minHeight="40.0" prefHeight="40.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="120.0" AnchorPane.rightAnchor="0.0">
+                        <AnchorPane fx:id="styleTopPane" styleClass="style-lower-triangle" maxWidth="40.0" minWidth="40.0" prefWidth="40.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                        <AnchorPane fx:id="topCommandPlaceholder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                    </AnchorPane>
+                </AnchorPane>
+                <AnchorPane fx:id="bottomWrapper" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="80.0">
+                    <AnchorPane fx:id="centerPanePlaceholder" maxHeight="95.0" minHeight="95.0" prefHeight="95.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                    <AnchorPane fx:id="bottomPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="95.0">
+                        <SplitPane fx:id="bottomPaneSplit" dividerPositions="0.5" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <AnchorPane fx:id="bottomListPane" minWidth="300.0" prefWidth="300.0">
+                                <AnchorPane fx:id="listPersonsPlaceholder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                            </AnchorPane>
+                            <AnchorPane fx:id="bottomInfoPane" minWidth="400.0">
+                                <VBox fx:id="welcomePane" alignment="CENTER" fillWidth="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                    <Label fx:id="welcomeTitle" text="Welcome to HR+"/>
+                                    <Pane fx:id="logoWelcome" styleClass="logo-hr" maxWidth="-Infinity" prefHeight="80.0" prefWidth="120.0" VBox.vgrow="NEVER">
+                                        <VBox.margin>
+                                            <Insets bottom="15.0" left="10.0" top="15.0" />
+                                        </VBox.margin>
+                                    </Pane>
+                                    <Label fx:id="welcomeMadeWith" text="Made with love by"/>
+                                    <Label fx:id="welcomeName" text="Yee Chin, Hong Qiang, Xiao Wen, Heng Yeow"/>
+                                </VBox>
+                                <AnchorPane fx:id="resumePanePlaceholder" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                <AnchorPane fx:id="infoPanePlaceholder" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                            </AnchorPane>
+                        </SplitPane>
+                        <padding>
+                            <Insets left="15.0" right="15.0" bottom="10.0" top="10.0"/>
+                        </padding>
+                    </AnchorPane>
+                </AnchorPane>
+            </AnchorPane>
+        </Scene>
+    </scene>
+</fx:root>
+```
+###### /resources/view/PdfPanel.fxml
+``` fxml
+<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="resumePaneOuter" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+    <AnchorPane fx:id="resumePaneWrapper" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <ScrollPane fx:id="resumePane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" focusTraversable="true">
+            <VBox fx:id="resumePanePages">
+                <padding>
+                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                </padding>
+            </VBox>
+        </ScrollPane>
+    </AnchorPane>
+
+    <Label fx:id="resumePageLabel" visible="false" AnchorPane.rightAnchor="16.0" AnchorPane.topAnchor="6.0">
+        <padding>
+            <Insets bottom="3.0" left="10.0" right="10.0" top="3.0" />
+        </padding>
+    </Label>
+
+    <VBox visible="false" fx:id="resumeLoading" alignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <Label fx:id="resumeLoadingLabel">
+            <VBox.margin>
+                <Insets bottom="5.0" />
+            </VBox.margin>
+        </Label>
+        <ProgressBar fx:id="resumeLoadingBar" styleClass="hr-progress-bar" maxWidth="Infinity" progress="0.5" />
+    </VBox>
+</AnchorPane>
+```
 ###### /resources/view/PersonListCard.fxml
 ``` fxml
 <AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="cardPersonPane" maxHeight="100.0" minHeight="100.0" prefHeight="100.0" VBox.vgrow="ALWAYS" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -2627,12 +2627,46 @@ public class InterviewCommandParser implements Parser<InterviewCommand> {
 </AnchorPane>
 
 ```
-###### /resources/view/CommandBox.fxml
+###### /resources/view/PersonListPanel.fxml
 ``` fxml
-<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="topCommand" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-    <TextField fx:id="commandInput" onAction="#handleCommandInputChanged" onKeyPressed="#handleKeyPress" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" promptText="Enter command here..." />
+<ListView xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="listPersons" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+```
+###### /resources/view/ResultDisplay.fxml
+``` fxml
+<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="centerPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
     <padding>
-        <Insets left="8.0" right="15.0" top="8.0" />
+        <Insets left="15.0" right="15.0" top="8.0" />
     </padding>
+    <TextArea fx:id="commandResult" editable="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
 </AnchorPane>
+```
+###### /resources/view/TitleBar.fxml
+``` fxml
+<HBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="topTitle" alignment="CENTER_RIGHT" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+    <Label fx:id="topStatusMessage" maxWidth="Infinity" HBox.hgrow="SOMETIMES"/>
+    <Label fx:id="topStatusFile" HBox.hgrow="SOMETIMES"/>
+    <HBox fx:id="topControl" minWidth="-Infinity">
+        <Pane fx:id="controlHelp" onMouseClicked="#handleHelp" layoutX="21.0" layoutY="21.0" maxHeight="18.0" maxWidth="18.0" minHeight="18.0" minWidth="18.0" prefHeight="18.0" prefWidth="18.0" HBox.hgrow="NEVER">
+            <Pane fx:id="controlHelpInner" styleClass="icon-help" layoutX="3.29" maxHeight="18.0" maxWidth="11.42" minHeight="18.0" minWidth="11.42" prefHeight="18.0" prefWidth="11.42" />
+            <HBox.margin>
+                <Insets right="20.0" />
+            </HBox.margin>
+        </Pane>
+        <Pane fx:id="controlMinimize" onMouseClicked="#handleMinimize" maxHeight="18.0" maxWidth="18.0" minHeight="18.0" minWidth="18.0" prefHeight="18.0" prefWidth="18.0" HBox.hgrow="NEVER">
+            <HBox.margin>
+                <Insets right="10.0" />
+            </HBox.margin>
+            <Pane fx:id="controlMinimizeInner" layoutY="16.2" maxHeight="1.8" maxWidth="18.0" minHeight="1.8" minWidth="18.0" prefHeight="1.8" prefWidth="18.0" />
+        </Pane>
+        <Pane fx:id="controlMaximize" styleClass="icon-expand" onMouseClicked="#handleMaximize" maxHeight="18.0" maxWidth="18.0" minHeight="18.0" minWidth="18.0" prefHeight="18.0" prefWidth="18.0" HBox.hgrow="NEVER">
+            <HBox.margin>
+                <Insets right="10.0" />
+            </HBox.margin>
+        </Pane>
+        <Pane fx:id="controlClose" styleClass="icon-close" onMouseClicked="#handleExit" maxHeight="18.0" maxWidth="18.0" minHeight="18.0" minWidth="18.0" prefHeight="18.0" prefWidth="18.0" HBox.hgrow="NEVER" />
+        <padding>
+            <Insets bottom="11.0" left="11.0" right="11.0" top="11.0" />
+        </padding>
+    </HBox>
+</HBox>
 ```

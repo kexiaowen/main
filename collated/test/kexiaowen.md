@@ -1,122 +1,4 @@
 # kexiaowen
-###### /java/seedu/address/model/person/UniversityTest.java
-``` java
-public class UniversityTest {
-    @Test
-    public void constructor_null_throwsNullPointerException() {
-        Assert.assertThrows(NullPointerException.class, () -> new University(null));
-    }
-
-    @Test
-    public void constructor_invalidUniversity_throwsIllegalArgumentException() {
-        String invalidUniversity = "";
-        Assert.assertThrows(IllegalArgumentException.class, () -> new University(invalidUniversity));
-    }
-
-    @Test
-    public void isValidUniversity() {
-        // null university
-        Assert.assertThrows(NullPointerException.class, () -> University.isValidUniversity(null));
-
-        // invalid university
-        assertFalse(University.isValidUniversity("")); // empty string
-        assertFalse(University.isValidUniversity(" ")); // spaces only
-        assertFalse(University.isValidUniversity("^")); // only non-alphanumeric characters
-        assertFalse(University.isValidUniversity("N*S")); // contains non-alphanumeric characters
-
-        // valid name
-        assertTrue(University.isValidUniversity("ntu")); // alphabets only
-        assertTrue(University.isValidUniversity("12345")); // numbers only
-        assertTrue(University.isValidUniversity("nus the 1st")); // alphanumeric characters
-        assertTrue(University.isValidUniversity("National University of Singapore")); // with capital letters
-        assertTrue(University.isValidUniversity("University of California Santa Barbara")); // long names
-    }
-}
-```
-###### /java/seedu/address/model/person/JobAppliedTest.java
-``` java
-public class JobAppliedTest {
-    @Test
-    public void constructor_null_throwsNullPointerException() {
-        Assert.assertThrows(NullPointerException.class, () -> new JobApplied(null));
-    }
-
-    @Test
-    public void constructor_invalidJobApplied_throwsIllegalArgumentException() {
-        String invalidJobApplied = "";
-        Assert.assertThrows(IllegalArgumentException.class, () -> new JobApplied(invalidJobApplied));
-    }
-
-    @Test
-    public void isValidJobApplied() {
-        // null jobApplied
-        Assert.assertThrows(NullPointerException.class, () -> JobApplied.isValidJobApplied(null));
-
-        // invalid jobApplied
-        assertFalse(JobApplied.isValidJobApplied("")); // empty string
-        assertFalse(JobApplied.isValidJobApplied(" ")); // spaces only
-
-        // valid jobApplied
-        assertTrue(JobApplied.isValidJobApplied("software engineer")); // alphabets only
-        assertTrue(JobApplied.isValidJobApplied("12345")); // numbers only
-        assertTrue(JobApplied.isValidJobApplied("1 software engineer 2 DevOps")); // alphanumeric characters
-        assertTrue(JobApplied.isValidJobApplied("Software Engineer")); // with capital letters
-        assertTrue(JobApplied.isValidJobApplied("Software Engineer & Web Developer")); // long names
-    }
-}
-```
-###### /java/seedu/address/model/person/RatingTest.java
-``` java
-public class RatingTest {
-
-    private final Rating rating = new Rating(3, 3,
-            4, 3.5);
-    @Test
-    public void isValidScore() {
-        // null phone number
-        Assert.assertThrows(NullPointerException.class, () -> Rating.isValidScore(null));
-
-        // invalid scores
-        assertFalse(Rating.isValidScore((double) 0));
-        assertFalse(Rating.isValidScore(5.5));
-        assertFalse(Rating.isValidScore((double) -3));
-
-        // valid phone numbers
-        assertTrue(Rating.isValidScore((double) 1));
-        assertTrue(Rating.isValidScore(3.5));
-        assertTrue(Rating.isValidScore((double) 5));
-    }
-
-    @Test
-    public void equals_sameObject_returnsTrue() {
-        assertTrue(rating.equals(rating));
-    }
-
-    @Test
-    public void equals_sameValues_returnsTrue() {
-        Rating ratingCopy = new Rating(rating.getTechnicalSkillsScore(), rating.communicationSkillsScore,
-                rating.getProblemSolvingSkillsScore(), rating.getExperienceScore());
-        assertTrue(rating.equals(ratingCopy));
-    }
-
-    @Test
-    public void equals_differentTypes_returnsFalse() {
-        assertFalse(rating.equals(1));
-    }
-
-    @Test
-    public void equals_null_returnsFalse() {
-        assertFalse(rating.equals(null));
-    }
-
-    @Test
-    public void equals_differentValues_returnsFalse() {
-        Rating differentRating = new Rating(1, 1,
-                1, 1);
-        assertFalse(rating.equals(differentRating));
-    }
-}
-```
 ###### /java/seedu/address/logic/commands/RateCommandTest.java
 ``` java
 /**
@@ -570,35 +452,6 @@ public class SortCommandTest {
     }
 }
 ```
-###### /java/seedu/address/logic/parser/RatingDeleteCommandParserTest.java
-``` java
-/**
- * As we are only doing white-box testing, our test cases do not cover path variations
- * outside of the RatingDeleteCommand code. For example, inputs "1" and "1 abc" take the
- * same path through the RatingDeleteCommand, and therefore we test only one of them.
- * The path variation for those two cases occur inside the ParserUtil, and
- * therefore should be covered by the ParserUtilTest.
- */
-public class RatingDeleteCommandParserTest {
-
-    private static final String MESSAGE_INVALID_FORMAT =
-            String.format(MESSAGE_INVALID_COMMAND_FORMAT, RatingDeleteCommand.MESSAGE_USAGE);
-
-    private RatingDeleteCommandParser parser = new RatingDeleteCommandParser();
-
-    @Test
-    public void parse_validArgs_returnsDeleteRatingCommand() {
-        assertParseSuccess(parser, "1", new RatingDeleteCommand(INDEX_FIRST_PERSON));
-    }
-
-    @Test
-    public void parse_invalidArgs_throwsParseException() {
-        assertParseFailure(parser, "", MESSAGE_INVALID_FORMAT);
-
-        assertParseFailure(parser, "a", MESSAGE_INVALID_FORMAT);
-    }
-}
-```
 ###### /java/seedu/address/logic/parser/RateCommandParserTest.java
 ``` java
 public class RateCommandParserTest {
@@ -629,5 +482,152 @@ public class RateCommandParserTest {
                 + " " + PREFIX_EXPERIENCE_SCORE, Rating.MESSAGE_RATING_CONSTRAINTS);
     }
 
+}
+```
+###### /java/seedu/address/logic/parser/RatingDeleteCommandParserTest.java
+``` java
+/**
+ * As we are only doing white-box testing, our test cases do not cover path variations
+ * outside of the RatingDeleteCommand code. For example, inputs "1" and "1 abc" take the
+ * same path through the RatingDeleteCommand, and therefore we test only one of them.
+ * The path variation for those two cases occur inside the ParserUtil, and
+ * therefore should be covered by the ParserUtilTest.
+ */
+public class RatingDeleteCommandParserTest {
+
+    private static final String MESSAGE_INVALID_FORMAT =
+            String.format(MESSAGE_INVALID_COMMAND_FORMAT, RatingDeleteCommand.MESSAGE_USAGE);
+
+    private RatingDeleteCommandParser parser = new RatingDeleteCommandParser();
+
+    @Test
+    public void parse_validArgs_returnsDeleteRatingCommand() {
+        assertParseSuccess(parser, "1", new RatingDeleteCommand(INDEX_FIRST_PERSON));
+    }
+
+    @Test
+    public void parse_invalidArgs_throwsParseException() {
+        assertParseFailure(parser, "", MESSAGE_INVALID_FORMAT);
+
+        assertParseFailure(parser, "a", MESSAGE_INVALID_FORMAT);
+    }
+}
+```
+###### /java/seedu/address/model/person/JobAppliedTest.java
+``` java
+public class JobAppliedTest {
+    @Test
+    public void constructor_null_throwsNullPointerException() {
+        Assert.assertThrows(NullPointerException.class, () -> new JobApplied(null));
+    }
+
+    @Test
+    public void constructor_invalidJobApplied_throwsIllegalArgumentException() {
+        String invalidJobApplied = "";
+        Assert.assertThrows(IllegalArgumentException.class, () -> new JobApplied(invalidJobApplied));
+    }
+
+    @Test
+    public void isValidJobApplied() {
+        // null jobApplied
+        Assert.assertThrows(NullPointerException.class, () -> JobApplied.isValidJobApplied(null));
+
+        // invalid jobApplied
+        assertFalse(JobApplied.isValidJobApplied("")); // empty string
+        assertFalse(JobApplied.isValidJobApplied(" ")); // spaces only
+
+        // valid jobApplied
+        assertTrue(JobApplied.isValidJobApplied("software engineer")); // alphabets only
+        assertTrue(JobApplied.isValidJobApplied("12345")); // numbers only
+        assertTrue(JobApplied.isValidJobApplied("1 software engineer 2 DevOps")); // alphanumeric characters
+        assertTrue(JobApplied.isValidJobApplied("Software Engineer")); // with capital letters
+        assertTrue(JobApplied.isValidJobApplied("Software Engineer & Web Developer")); // long names
+    }
+}
+```
+###### /java/seedu/address/model/person/RatingTest.java
+``` java
+public class RatingTest {
+
+    private final Rating rating = new Rating(3, 3,
+            4, 3.5);
+    @Test
+    public void isValidScore() {
+        // null phone number
+        Assert.assertThrows(NullPointerException.class, () -> Rating.isValidScore(null));
+
+        // invalid scores
+        assertFalse(Rating.isValidScore((double) 0));
+        assertFalse(Rating.isValidScore(5.5));
+        assertFalse(Rating.isValidScore((double) -3));
+
+        // valid phone numbers
+        assertTrue(Rating.isValidScore((double) 1));
+        assertTrue(Rating.isValidScore(3.5));
+        assertTrue(Rating.isValidScore((double) 5));
+    }
+
+    @Test
+    public void equals_sameObject_returnsTrue() {
+        assertTrue(rating.equals(rating));
+    }
+
+    @Test
+    public void equals_sameValues_returnsTrue() {
+        Rating ratingCopy = new Rating(rating.getTechnicalSkillsScore(), rating.communicationSkillsScore,
+                rating.getProblemSolvingSkillsScore(), rating.getExperienceScore());
+        assertTrue(rating.equals(ratingCopy));
+    }
+
+    @Test
+    public void equals_differentTypes_returnsFalse() {
+        assertFalse(rating.equals(1));
+    }
+
+    @Test
+    public void equals_null_returnsFalse() {
+        assertFalse(rating.equals(null));
+    }
+
+    @Test
+    public void equals_differentValues_returnsFalse() {
+        Rating differentRating = new Rating(1, 1,
+                1, 1);
+        assertFalse(rating.equals(differentRating));
+    }
+}
+```
+###### /java/seedu/address/model/person/UniversityTest.java
+``` java
+public class UniversityTest {
+    @Test
+    public void constructor_null_throwsNullPointerException() {
+        Assert.assertThrows(NullPointerException.class, () -> new University(null));
+    }
+
+    @Test
+    public void constructor_invalidUniversity_throwsIllegalArgumentException() {
+        String invalidUniversity = "";
+        Assert.assertThrows(IllegalArgumentException.class, () -> new University(invalidUniversity));
+    }
+
+    @Test
+    public void isValidUniversity() {
+        // null university
+        Assert.assertThrows(NullPointerException.class, () -> University.isValidUniversity(null));
+
+        // invalid university
+        assertFalse(University.isValidUniversity("")); // empty string
+        assertFalse(University.isValidUniversity(" ")); // spaces only
+        assertFalse(University.isValidUniversity("^")); // only non-alphanumeric characters
+        assertFalse(University.isValidUniversity("N*S")); // contains non-alphanumeric characters
+
+        // valid name
+        assertTrue(University.isValidUniversity("ntu")); // alphabets only
+        assertTrue(University.isValidUniversity("12345")); // numbers only
+        assertTrue(University.isValidUniversity("nus the 1st")); // alphanumeric characters
+        assertTrue(University.isValidUniversity("National University of Singapore")); // with capital letters
+        assertTrue(University.isValidUniversity("University of California Santa Barbara")); // long names
+    }
 }
 ```
